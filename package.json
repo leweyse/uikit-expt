@@ -1,0 +1,40 @@
+{
+  "name": "3d-svg",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "check": "biome check --write .",
+    "dev": "vite",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@preact/signals-core": "^1.8.0",
+    "@preact/signals-react": "^3.0.1",
+    "@react-spring/three": "^9.7.5",
+    "@react-spring/web": "^9.7.5",
+    "@react-three/drei": "^10.0.6",
+    "@react-three/fiber": "^9.1.2",
+    "@react-three/uikit": "^0.8.15",
+    "@tailwindcss/vite": "^4.1.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "three": "^0.175.0",
+    "tunnel-rat": "^0.1.2",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "https://pkg.pr.new/biomejs/biome/@biomejs/biome@5f890fb",
+    "@types/node": "^22.14.1",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@types/three": "^0.175.0",
+    "@vitejs/plugin-react-swc": "^3.9.0",
+    "pathe": "^2.0.3",
+    "tailwindcss": "^4.1.4",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.2",
+    "vite-plugin-glsl": "^1.4.0"
+  }
+}
