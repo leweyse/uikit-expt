@@ -44,7 +44,7 @@ function App() {
       <OrbitControls />
 
       <Root display='flex' flexDirection='column' width={500} gap={6}>
-        <Card>
+        <Card iconScale={0.75}>
           <CardLabel>
             <Text>Relay</Text>
           </CardLabel>
@@ -55,10 +55,10 @@ function App() {
             </Text>
           </CardDescription>
 
-          <InteractiveColumns />
+          <InteractiveColumns  />
         </Card>
 
-        <Card>
+        <Card iconScale={1.1}>
           <CardLabel>
             <Text>Enclaves</Text>
           </CardLabel>
