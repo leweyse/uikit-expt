@@ -1,17 +1,19 @@
+import type { FC } from 'react';
+import type { SpringValue } from '@react-spring/three';
 import type { Color } from 'three';
 
 import type { PropsWithChildren } from '@/types';
 
-import { createContext, type FC, useContext, useMemo } from 'react';
-import { animated, type SpringValue } from '@react-spring/three';
-import { Container, Content, DefaultProperties } from '@react-three/uikit';
+import { createContext, useContext, useMemo } from 'react';
+import { computed } from '@preact/signals-core';
+import { animated } from '@react-spring/three';
+import { Container, DefaultProperties } from '@react-three/uikit';
 import tunnel from 'tunnel-rat';
 
 import { colors } from '@/common/canvas/theme';
 import { themes } from '@/common/themes';
 import { Corner } from '@/components/corner';
 import { useSpringSignal } from '@/utils/use-spring-signal';
-import { computed } from '@preact/signals-core';
 
 type TunnelsContext = {
   label: ReturnType<typeof tunnel>;
@@ -58,7 +60,10 @@ const CardInternal: FC<PropsWithChildren> = ({ children }) => {
   const [inset, insetSpring] = useSpringSignal(0);
   const [padding, paddingSpring] = useSpringSignal(12);
   const [transformRotate, transformRotateSpring] = useSpringSignal(0);
-  const transformRotateWOffset = useMemo(() => computed(() => transformRotate.value + 45), [])
+  const transformRotateWOffset = useMemo(
+    () => computed(() => transformRotate.value + 45),
+    [transformRotate],
+  );
   const [hoverWidth, hoverWidthSpring] = useSpringSignal(
     '100%' as `${number}%`,
   );
