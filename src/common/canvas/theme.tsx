@@ -19,10 +19,10 @@ export const borderRadius = {
 export const themeName = signal<Theme>('neutral');
 
 export const colors = {} as {
-  -readonly [Key in keyof (typeof themes)['slate']['light']]: ReadonlySignal<Color>;
+  -readonly [Key in keyof (typeof themes)['neutral']['light']]: ReadonlySignal<Color>;
 };
-for (const anyKey in themes.slate.light) {
-  const key = anyKey as keyof (typeof themes)['slate']['light'];
+for (const anyKey in themes.neutral.light) {
+  const key = anyKey as keyof (typeof themes)['neutral']['light'];
   colors[key] = computed<Color>(() => themes[themeName.value].light[key]);
 }
 

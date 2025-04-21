@@ -1,17 +1,19 @@
+import type { FC } from 'react';
+import type { SpringValue } from '@react-spring/three';
 import type { Color } from 'three';
 
 import type { PropsWithChildren } from '@/types';
 
-import { createContext, type FC, useContext, useMemo } from 'react';
-import { animated, type SpringValue } from '@react-spring/three';
-import { Container, Content, DefaultProperties } from '@react-three/uikit';
+import { createContext, useContext, useMemo } from 'react';
+import { computed } from '@preact/signals-core';
+import { animated } from '@react-spring/three';
+import { Container, DefaultProperties } from '@react-three/uikit';
 import tunnel from 'tunnel-rat';
 
 import { colors } from '@/common/canvas/theme';
 import { themes } from '@/common/themes';
 import { Corner } from '@/components/corner';
 import { useSpringSignal } from '@/utils/use-spring-signal';
-import { computed } from '@preact/signals-core';
 
 type TunnelsContext = {
   label: ReturnType<typeof tunnel>;
@@ -52,13 +54,16 @@ export const useCardIcon = () => {
 
 const AnimatedIconProvider = animated(IconProvider.Provider);
 
-const CardInternal: FC<PropsWithChildren> = ({ children, iconScale }) => {
+const CardInternal: FC<PropsWithChildren> = ({ children }) => {
   const { label, description } = useTunnels();
 
   const [inset, insetSpring] = useSpringSignal(0);
   const [padding, paddingSpring] = useSpringSignal(12);
   const [transformRotate, transformRotateSpring] = useSpringSignal(0);
-  const transformRotateWOffset = useMemo(() => computed(() => transformRotate.value + 45), [])
+  const transformRotateWOffset = useMemo(
+    () => computed(() => transformRotate.value + 45),
+    [transformRotate],
+  );
   const [hoverWidth, hoverWidthSpring] = useSpringSignal(
     '100%' as `${number}%`,
   );
@@ -77,7 +82,7 @@ const CardInternal: FC<PropsWithChildren> = ({ children, iconScale }) => {
         edgeColorSpring.start(themes.violet.light.primary);
 
         insetSpring.start(-6);
-        paddingSpring.start(4);
+        paddingSpring.start(6);
         hoverWidthSpring.start('0%');
 
         transformRotateSpring.start(360, {
@@ -116,7 +121,7 @@ const CardInternal: FC<PropsWithChildren> = ({ children, iconScale }) => {
           />
           <Corner positionBottom={-1} positionLeft={-1} transformRotateZ={90} />
 
-          <Content
+          <DefaultProperties
             depthAlign='middle'
             positionType='absolute'
             inset={0}
@@ -124,12 +129,11 @@ const CardInternal: FC<PropsWithChildren> = ({ children, iconScale }) => {
             padding={padding}
             transformRotateX={transformRotateWOffset}
             transformRotateY={transformRotateWOffset}
-            transformScale={iconScale}
           >
             <AnimatedIconProvider value={{ edgeColor: edgeColorSpring }}>
               {children}
             </AnimatedIconProvider>
-          </Content>
+          </DefaultProperties>
         </Container>
       </Container>
 
@@ -137,7 +141,7 @@ const CardInternal: FC<PropsWithChildren> = ({ children, iconScale }) => {
         flexGrow={1}
         flexDirection='column'
         alignItems='flex-start'
-        gap={6}
+        gap={4}
       >
         <Container positionType='relative'>
           <label.Out />
@@ -199,7 +203,7 @@ export const CardDescription: FC<PropsWithChildren> = ({ children }) => {
   );
 };
 
-export const Card: FC<PropsWithChildren> = ({ children, iconScale }) => {
+export const Card: FC<PropsWithChildren> = ({ children }) => {
   const tunnels = useMemo(() => {
     return {
       label: tunnel(),
@@ -209,7 +213,7 @@ export const Card: FC<PropsWithChildren> = ({ children, iconScale }) => {
 
   return (
     <TunnelsProvider value={tunnels}>
-      <CardInternal iconScale={iconScale}>{children}</CardInternal>
+      <CardInternal>{children}</CardInternal>
     </TunnelsProvider>
   );
 };
