@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { animated } from '@react-spring/three';
 import { OrbitControls, OrthographicCamera } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import { Root, Text } from '@react-three/uikit';
+import { Content, Root, Text } from '@react-three/uikit';
 
 import {
   Card,
@@ -44,7 +44,7 @@ function App() {
       <OrbitControls />
 
       <Root display='flex' flexDirection='column' width={500} gap={6}>
-        <Card iconScale={0.75}>
+        <Card>
           <CardLabel>
             <Text>Relay</Text>
           </CardLabel>
@@ -55,10 +55,12 @@ function App() {
             </Text>
           </CardDescription>
 
-          <InteractiveColumns  />
+          <Content transformScale={0.75}>
+            <InteractiveColumns />
+          </Content>
         </Card>
 
-        <Card iconScale={1.1}>
+        <Card>
           <CardLabel>
             <Text>Enclaves</Text>
           </CardLabel>
@@ -70,7 +72,9 @@ function App() {
             </Text>
           </CardDescription>
 
-          <InteractiveCubes />
+          <Content transformScale={1.1}>
+            <InteractiveCubes />
+          </Content>
         </Card>
       </Root>
     </Canvas>

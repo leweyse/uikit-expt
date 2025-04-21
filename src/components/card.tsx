@@ -52,7 +52,7 @@ export const useCardIcon = () => {
 
 const AnimatedIconProvider = animated(IconProvider.Provider);
 
-const CardInternal: FC<PropsWithChildren> = ({ children, iconScale }) => {
+const CardInternal: FC<PropsWithChildren> = ({ children }) => {
   const { label, description } = useTunnels();
 
   const [inset, insetSpring] = useSpringSignal(0);
@@ -116,7 +116,7 @@ const CardInternal: FC<PropsWithChildren> = ({ children, iconScale }) => {
           />
           <Corner positionBottom={-1} positionLeft={-1} transformRotateZ={90} />
 
-          <Content
+          <DefaultProperties
             depthAlign='middle'
             positionType='absolute'
             inset={0}
@@ -124,12 +124,11 @@ const CardInternal: FC<PropsWithChildren> = ({ children, iconScale }) => {
             padding={padding}
             transformRotateX={transformRotateWOffset}
             transformRotateY={transformRotateWOffset}
-            transformScale={iconScale}
           >
             <AnimatedIconProvider value={{ edgeColor: edgeColorSpring }}>
               {children}
             </AnimatedIconProvider>
-          </Content>
+          </DefaultProperties>
         </Container>
       </Container>
 
@@ -199,7 +198,7 @@ export const CardDescription: FC<PropsWithChildren> = ({ children }) => {
   );
 };
 
-export const Card: FC<PropsWithChildren> = ({ children, iconScale }) => {
+export const Card: FC<PropsWithChildren> = ({ children }) => {
   const tunnels = useMemo(() => {
     return {
       label: tunnel(),
@@ -209,7 +208,7 @@ export const Card: FC<PropsWithChildren> = ({ children, iconScale }) => {
 
   return (
     <TunnelsProvider value={tunnels}>
-      <CardInternal iconScale={iconScale}>{children}</CardInternal>
+      <CardInternal>{children}</CardInternal>
     </TunnelsProvider>
   );
 };
