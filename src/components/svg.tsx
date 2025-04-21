@@ -26,7 +26,7 @@ type Props = {
 
 export const Columns: FC<Props> = ({ edgeColor }) => {
   return (
-    <group rotation={[Math.PI / 4, Math.PI / 4, 0]}>
+    <group>
       {columns.map((i) => (
         <mesh key={i} position={[i * 0.3, 0, 0]}>
           <boxGeometry args={[0.175, 1, 1]} />
@@ -49,7 +49,7 @@ const cubes: Record<number, [number, number, number]> = {
 
 export const Cubes: FC<Props> = ({ edgeColor }) => {
   return (
-    <group rotation={[Math.PI / 4, Math.PI / 4, 0]}>
+    <group>
       {Object.entries(cubes).map(([idx, pos]) => (
         <mesh key={idx} position={pos}>
           <boxGeometry args={[1, 1, 1]} />

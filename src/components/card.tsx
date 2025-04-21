@@ -11,6 +11,7 @@ import { colors } from '@/common/canvas/theme';
 import { themes } from '@/common/themes';
 import { Corner } from '@/components/corner';
 import { useSpringSignal } from '@/utils/use-spring-signal';
+import { computed } from '@preact/signals-core';
 
 type TunnelsContext = {
   label: ReturnType<typeof tunnel>;
@@ -51,12 +52,13 @@ export const useCardIcon = () => {
 
 const AnimatedIconProvider = animated(IconProvider.Provider);
 
-const CardInternal: FC<PropsWithChildren> = ({ children }) => {
+const CardInternal: FC<PropsWithChildren> = ({ children, iconScale }) => {
   const { label, description } = useTunnels();
 
   const [inset, insetSpring] = useSpringSignal(0);
   const [padding, paddingSpring] = useSpringSignal(12);
   const [transformRotate, transformRotateSpring] = useSpringSignal(0);
+  const transformRotateWOffset = useMemo(() => computed(() => transformRotate.value + 45), [])
   const [hoverWidth, hoverWidthSpring] = useSpringSignal(
     '100%' as `${number}%`,
   );
@@ -65,6 +67,7 @@ const CardInternal: FC<PropsWithChildren> = ({ children }) => {
 
   return (
     <Container
+      cursor='pointer'
       flexDirection='row'
       alignItems='center'
       width='100%'
@@ -117,9 +120,11 @@ const CardInternal: FC<PropsWithChildren> = ({ children }) => {
             depthAlign='middle'
             positionType='absolute'
             inset={0}
+            depthWrite
             padding={padding}
-            transformRotateX={transformRotate}
-            transformRotateY={transformRotate}
+            transformRotateX={transformRotateWOffset}
+            transformRotateY={transformRotateWOffset}
+            transformScale={iconScale}
           >
             <AnimatedIconProvider value={{ edgeColor: edgeColorSpring }}>
               {children}
@@ -194,7 +199,7 @@ export const CardDescription: FC<PropsWithChildren> = ({ children }) => {
   );
 };
 
-export const Card: FC<PropsWithChildren> = ({ children }) => {
+export const Card: FC<PropsWithChildren> = ({ children, iconScale }) => {
   const tunnels = useMemo(() => {
     return {
       label: tunnel(),
@@ -204,7 +209,7 @@ export const Card: FC<PropsWithChildren> = ({ children }) => {
 
   return (
     <TunnelsProvider value={tunnels}>
-      <CardInternal>{children}</CardInternal>
+      <CardInternal iconScale={iconScale}>{children}</CardInternal>
     </TunnelsProvider>
   );
 };
