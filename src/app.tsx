@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { animated } from '@react-spring/three';
-import { OrbitControls, OrthographicCamera } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { Content, Root, Text } from '@react-three/uikit';
 
@@ -36,11 +36,11 @@ const InteractiveCubes = () => {
 function App() {
   return (
     <Canvas
-      className='absolute inset-0 touch-none'
+      orthographic
+      camera={{ position: [0, 0, 10], zoom: 100 }}
       gl={{ localClippingEnabled: true }}
+      style={{ height: '100dvh', touchAction: 'none' }}
     >
-      <OrthographicCamera makeDefault zoom={100} position={[0, 0, 10]} />
-
       <OrbitControls />
 
       <Root display='flex' flexDirection='column' width={500} gap={6}>
