@@ -82,7 +82,7 @@ const CardInternal: FC<PropsWithChildren> = ({ children }) => {
         edgeColorSpring.start(themes.violet.light.primary);
 
         insetSpring.start(-6);
-        paddingSpring.start(4);
+        paddingSpring.start(6);
         hoverWidthSpring.start('0%');
 
         transformRotateSpring.start(360, {
@@ -141,7 +141,7 @@ const CardInternal: FC<PropsWithChildren> = ({ children }) => {
         flexGrow={1}
         flexDirection='column'
         alignItems='flex-start'
-        gap={6}
+        gap={4}
       >
         <Container positionType='relative'>
           <label.Out />

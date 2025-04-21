@@ -43,7 +43,7 @@ function App() {
     >
       <OrbitControls />
 
-      <Root display='flex' flexDirection='column' width={500} gap={6}>
+      <Root display='flex' flexDirection='column' width={450} gap={6}>
         <Card>
           <CardLabel>
             <Text>Relay</Text>
