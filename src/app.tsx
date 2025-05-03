@@ -1,90 +1,39 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { animated } from '@react-spring/three';
-import { OrbitControls } from '@react-three/drei';
-import { Canvas } from '@react-three/fiber';
-import { Content, Root, Text } from '@react-three/uikit';
+import { createRouter, RouterProvider } from '@tanstack/react-router';
 
-import {
-  Card,
-  CardDescription,
-  CardLabel,
-  useCardIcon,
-} from '@/components/card';
-import { Columns, Cubes } from '@/components/svg';
+import { routeTree } from './routeTree.gen';
 
 import './index.css';
 
-const AnimatedColumns = animated(Columns);
-
-const InteractiveColumns = () => {
-  const { edgeColor } = useCardIcon();
-
-  // @ts-expect-error - not sure how to type this
-  return <AnimatedColumns edgeColor={edgeColor} />;
-};
-
-const AnimatedCubes = animated(Cubes);
-
-const InteractiveCubes = () => {
-  const { edgeColor } = useCardIcon();
-
-  // @ts-expect-error - not sure how to type this
-  return <AnimatedCubes edgeColor={edgeColor} />;
-};
-
-function App() {
+const NotFound = () => {
   return (
-    <Canvas
-      orthographic
-      camera={{ position: [0, 0, 10], zoom: 100 }}
-      gl={{ localClippingEnabled: true }}
-      style={{ height: '100dvh', touchAction: 'none' }}
-    >
-      <OrbitControls />
-
-      <Root display='flex' flexDirection='column' width={450} gap={6}>
-        <Card>
-          <CardLabel>
-            <Text>Relay</Text>
-          </CardLabel>
-
-          <CardDescription>
-            <Text>
-              A network proxy for encrypting and decrypting data in transit.
-            </Text>
-          </CardDescription>
-
-          <Content transformScale={0.75}>
-            <InteractiveColumns />
-          </Content>
-        </Card>
-
-        <Card>
-          <CardLabel>
-            <Text>Enclaves</Text>
-          </CardLabel>
-
-          <CardDescription>
-            <Text>
-              Build, deploy and scale applications in a Confidential Computing
-              environment.
-            </Text>
-          </CardDescription>
-
-          <Content transformScale={1.1}>
-            <InteractiveCubes />
-          </Content>
-        </Card>
-      </Root>
-    </Canvas>
+    <div className='fixed inset-0 flex flex-col items-center justify-center gap-2 p-4'>
+      <h1 className='text-3xl font-bold'>404</h1>
+      <p className='text-xl'>No experiment available (yet)</p>
+    </div>
   );
+};
+
+const router = createRouter({
+  routeTree,
+  defaultViewTransition: true,
+  defaultNotFoundComponent: NotFound,
+});
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router;
+  }
 }
 
-const root = document.getElementById('app');
+const rootElement = document.getElementById('app')!;
 
-createRoot(root!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+if (!rootElement.innerHTML) {
+  const root = createRoot(rootElement);
+  root.render(
+    <StrictMode>
+      <RouterProvider router={router} />
+    </StrictMode>,
+  );
+}

@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
 import tailwindcss from '@tailwindcss/vite';
+import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react-swc';
 import { dirname, resolve } from 'pathe';
 import { defineConfig } from 'vite';
@@ -23,5 +24,13 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
-  plugins: [react(), tailwindcss(), glsl()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    glsl(),
+    TanStackRouterVite({
+      target: 'react',
+      autoCodeSplitting: true,
+    }),
+  ],
 });

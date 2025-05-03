@@ -12,8 +12,9 @@ import tunnel from 'tunnel-rat';
 
 import { colors } from '@/common/canvas/theme';
 import { themes } from '@/common/themes';
-import { Corner } from '@/components/corner';
 import { useSpringSignal } from '@/utils/use-spring-signal';
+
+import { Corner } from './corner';
 
 type TunnelsContext = {
   label: ReturnType<typeof tunnel>;
