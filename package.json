@@ -11,10 +11,11 @@
   },
   "dependencies": {
     "@preact/signals-core": "^1.8.0",
-    "@react-spring/three": "^9.7.5",
+    "@react-spring/three": "10.0.0-beta.0",
     "@react-three/drei": "^10.0.6",
     "@react-three/fiber": "^9.1.2",
     "@react-three/uikit": "^0.8.15",
+    "@tanstack/react-router": "^1.119.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "three": "^0.175.0",
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.0.0-beta.2",
     "@tailwindcss/vite": "^4.1.4",
+    "@tanstack/router-plugin": "^1.119.0",
     "@types/node": "^22.14.1",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
