@@ -1,4 +1,5 @@
 import { Canvas } from '@react-three/fiber';
+import { noEvents, PointerEvents } from '@react-three/xr';
 import { createRootRoute, Link, Outlet } from '@tanstack/react-router';
 
 import { Canvas as CanvasTunnel } from '@/global/tunnels';
@@ -16,7 +17,12 @@ function Root() {
         </Link>
       </div>
 
-      <Canvas gl={{ localClippingEnabled: true }} className='!fixed !inset-0'>
+      <Canvas
+        gl={{ localClippingEnabled: true }}
+        className='!fixed !inset-0'
+        events={noEvents}
+      >
+        <PointerEvents />
         <CanvasTunnel.Out />
       </Canvas>
 

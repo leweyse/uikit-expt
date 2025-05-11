@@ -17,6 +17,7 @@ import { Route as rootRoute } from './routes/__root'
 // Create Virtual Routes
 
 const IndexLazyImport = createFileRoute('/')()
+const InputIndexLazyImport = createFileRoute('/input/')()
 const CardIndexLazyImport = createFileRoute('/card/')()
 
 // Create/Update Routes
@@ -26,6 +27,12 @@ const IndexLazyRoute = IndexLazyImport.update({
   path: '/',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/index.lazy').then((d) => d.Route))
+
+const InputIndexLazyRoute = InputIndexLazyImport.update({
+  id: '/input/',
+  path: '/input/',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/input/index.lazy').then((d) => d.Route))
 
 const CardIndexLazyRoute = CardIndexLazyImport.update({
   id: '/card/',
@@ -51,6 +58,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CardIndexLazyImport
       parentRoute: typeof rootRoute
     }
+    '/input/': {
+      id: '/input/'
+      path: '/input'
+      fullPath: '/input'
+      preLoaderRoute: typeof InputIndexLazyImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -59,36 +73,41 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
   '/card': typeof CardIndexLazyRoute
+  '/input': typeof InputIndexLazyRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
   '/card': typeof CardIndexLazyRoute
+  '/input': typeof InputIndexLazyRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexLazyRoute
   '/card/': typeof CardIndexLazyRoute
+  '/input/': typeof InputIndexLazyRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/card'
+  fullPaths: '/' | '/card' | '/input'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/card'
-  id: '__root__' | '/' | '/card/'
+  to: '/' | '/card' | '/input'
+  id: '__root__' | '/' | '/card/' | '/input/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute
   CardIndexLazyRoute: typeof CardIndexLazyRoute
+  InputIndexLazyRoute: typeof InputIndexLazyRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexLazyRoute: IndexLazyRoute,
   CardIndexLazyRoute: CardIndexLazyRoute,
+  InputIndexLazyRoute: InputIndexLazyRoute,
 }
 
 export const routeTree = rootRoute
@@ -102,7 +121,8 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/card/"
+        "/card/",
+        "/input/"
       ]
     },
     "/": {
@@ -110,6 +130,9 @@ export const routeTree = rootRoute
     },
     "/card/": {
       "filePath": "card/index.lazy.tsx"
+    },
+    "/input/": {
+      "filePath": "input/index.lazy.tsx"
     }
   }
 }

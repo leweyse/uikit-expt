@@ -41,7 +41,7 @@ const buttonVariants = {
       borderColor: colors.input,
       backgroundColor: colors.background,
     },
-  }, //TODO: hover:text-accent-foreground",
+  },
   secondary: {
     containerHoverProps: {
       backgroundOpacity: 0.8,
@@ -58,13 +58,13 @@ const buttonVariants = {
       backgroundColor: colors.accent,
     },
     defaultProps: {},
-  }, // TODO: hover:text-accent-foreground",
+  },
   link: {
     containerProps: {},
     defaultProps: {
       color: colors.primary,
     },
-  }, //TODO: underline-offset-4 hover:underline",
+  },
 };
 
 const buttonSizes = {
