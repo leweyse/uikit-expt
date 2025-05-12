@@ -18,7 +18,8 @@ import { ElemMaterial } from '@/shaders/elem';
 import { useSpringSignal } from '@/utils/use-spring-signal';
 
 import { Input } from './-components/input';
-import { FACTOR } from './-components/utils';
+
+const FACTOR = 3;
 
 export const Route = createLazyFileRoute('/input/')({
   component: () => (
