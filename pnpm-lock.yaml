@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@pmndrs/pointer-events':
+        specifier: ^6.6.16
+        version: 6.6.16
       '@preact/signals-core':
         specifier: ^1.8.0
         version: 1.8.0

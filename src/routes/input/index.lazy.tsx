@@ -1,12 +1,12 @@
 import type { CustomShaderRef } from '@/types';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { forwardObjectEvents } from '@pmndrs/pointer-events';
 import { computed, signal } from '@preact/signals-core';
 import { OrbitControls } from '@react-three/drei';
 import { createPortal, useFrame, useThree } from '@react-three/fiber';
 import { Container, Fullscreen } from '@react-three/uikit';
 import { Diamond, MoveUp } from '@react-three/uikit-lucide';
-import { PointerEvents } from '@react-three/xr';
 import { createLazyFileRoute } from '@tanstack/react-router';
 import * as THREE from 'three';
 
@@ -36,11 +36,28 @@ function Page() {
   const _height = size.height * viewport.dpr;
   const ratio = _width > _height ? _width / _height : _height / _width;
 
-  const camera = new THREE.PerspectiveCamera(75, _width / _height, 0.1, 1000);
-  camera.position.set(0, 0, 5);
+  const [mesh, setMesh] = useState<THREE.Mesh | null>(null);
+  const shader = useRef<CustomShaderRef<typeof ElemMaterial>>(null);
 
-  const scene = new THREE.Scene();
-  scene.background = themes.neutral.light.background;
+  const camera = useMemo(() => {
+    const cam = new THREE.PerspectiveCamera(75, _width / _height, 0.1, 1000);
+    cam.position.set(0, 0, 5);
+    return cam;
+  }, [_width, _height]);
+
+  const scene = useMemo(() => {
+    const scene = new THREE.Scene();
+    scene.background = themes.neutral.light.foreground;
+    return scene;
+  }, []);
+
+  const forwardObjEvt = useMemo(() => {
+    if (!mesh) {
+      return null;
+    }
+
+    return forwardObjectEvents(mesh, () => camera, scene);
+  }, [mesh, camera, scene]);
 
   const renderTarget = useMemo(() => {
     return new THREE.WebGLRenderTarget(_width, _height, {
@@ -53,13 +70,15 @@ function Page() {
     return () => renderTarget.dispose();
   }, [renderTarget]);
 
-  const shader = useRef<CustomShaderRef<typeof ElemMaterial>>(null);
-
   useFrame((state) => {
     const { gl, clock } = state;
 
     // Set the current render target to our FBO
     gl.setRenderTarget(renderTarget);
+
+    if (forwardObjEvt) {
+      forwardObjEvt.update();
+    }
 
     // Render the simulation material with square geometry in the render target
     gl.render(scene, camera);
@@ -80,15 +99,12 @@ function Page() {
         <Fullscreen distanceToCamera={1} alignItems='center'>
           {/* Sync with outer controls */}
           <OrbitControls camera={camera} />
-
-          <PointerEvents forwardPointerCapture />
-
           <ChatInput />
         </Fullscreen>,
         scene,
       )}
 
-      <mesh scale={7 / ratio} position={[0, 0, 0]}>
+      <mesh ref={setMesh} scale={7 / ratio}>
         <planeGeometry
           args={[
             _width > _height ? _width / _height : 1,
