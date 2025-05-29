@@ -1,6 +1,6 @@
 import type { CustomShaderRef } from '@/types';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ComponentRef, useEffect, useMemo, useRef, useState } from 'react';
 import { forwardObjectEvents } from '@pmndrs/pointer-events';
 import { computed, signal } from '@preact/signals-core';
 import { OrbitControls } from '@react-three/drei';
@@ -18,6 +18,7 @@ import { ElemMaterial } from '@/shaders/elem';
 import { useSpringSignal } from '@/utils/use-spring-signal';
 
 import { Input } from './-components/input';
+import { ShaderTunnel } from './-components/shader';
 
 const FACTOR = 3;
 
@@ -38,7 +39,17 @@ function Page() {
   const ratio = _width > _height ? _width / _height : _height / _width;
 
   const [mesh, setMesh] = useState<THREE.Mesh | null>(null);
-  const shader = useRef<CustomShaderRef<typeof ElemMaterial>>(null);
+
+  const outerControls = useRef<ComponentRef<typeof OrbitControls>>(null);
+  const innerControls = useRef<ComponentRef<typeof OrbitControls>>(null);
+
+  const renderTarget = useMemo(() => {
+    return new THREE.WebGLRenderTarget(_width, _height, {
+      type: THREE.HalfFloatType,
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+    });
+  }, [_width, _height]);
 
   const camera = useMemo(() => {
     const cam = new THREE.PerspectiveCamera(75, _width / _height, 0.1, 1000);
@@ -68,7 +79,11 @@ function Page() {
   }, [_width, _height]);
 
   useEffect(() => {
-    return () => renderTarget.dispose();
+    return () => {
+      outerControls.current?.reset();
+      innerControls.current?.reset();
+      renderTarget.dispose();
+    };
   }, [renderTarget]);
 
   useFrame((state) => {
@@ -84,23 +99,19 @@ function Page() {
     // Render the simulation material with square geometry in the render target
     gl.render(scene, camera);
 
-    if (shader.current) {
-      shader.current.uniforms.uTime.value = clock.getElapsedTime();
-    }
-
     // Revert to the default render target
     gl.setRenderTarget(null);
   });
 
   return (
     <>
-      <OrbitControls />
+      <OrbitControls ref={outerControls} />
 
       {createPortal(
         <Fullscreen distanceToCamera={1} alignItems='center'>
           {/* Sync with outer controls */}
-          <OrbitControls camera={camera} />
-          <ChatInput />
+          <OrbitControls ref={innerControls} camera={camera} />
+          <ChatInput renderTarget={renderTarget} />
         </Fullscreen>,
         scene,
       )}
@@ -110,25 +121,53 @@ function Page() {
           args={[
             _width > _height ? _width / _height : 1,
             _width > _height ? 1 : _height / _width,
-            32,
-            32,
+            96,
+            96,
           ]}
         />
-        <elemMaterial
-          key={ElemMaterial.key}
-          ref={shader}
-          uTexture={renderTarget.texture}
-        />
+
+        <ShaderTunnel.Out />
       </mesh>
     </>
   );
 }
 
-function ChatInput() {
-  const inputSignal = useMemo(() => signal(''), []);
+function ChatInput(props: { renderTarget: THREE.WebGLRenderTarget }) {
+  const shader = useRef<CustomShaderRef<typeof ElemMaterial>>(null);
 
+  const inputSignal = useMemo(() => signal(''), []);
   const isRecording = useMemo(() => signal(false), []);
+
   const [recRotationZ, recRotationZSpring] = useSpringSignal(0);
+
+  const [_, shaderRightSideProgress] = useSpringSignal(0, {
+    config: {
+      friction: 48,
+    },
+    onChange: (value) => {
+      if (shader.current) {
+        shader.current.uniforms.uProgress2.value = value;
+      }
+    },
+    onRest: () => {
+      inputSignal.value = '';
+    },
+  });
+
+  const [__, shaderLeftSideProgress] = useSpringSignal(0, {
+    config: {
+      clamp: true,
+      duration: 750,
+    },
+    onChange: (value) => {
+      if (shader.current) {
+        shader.current.uniforms.uProgress.value = value;
+      }
+    },
+    onRest: () => {
+      shaderRightSideProgress.start(1);
+    },
+  });
 
   const recButtonBg = computed(() => {
     if (isRecording.value) {
@@ -162,31 +201,35 @@ function ChatInput() {
     return colors.secondaryForeground.value;
   });
 
+  useFrame((state) => {
+    const { clock } = state;
+
+    if (shader.current) {
+      shader.current.uniforms.uTime.value = clock.getElapsedTime();
+    }
+  });
+
   return (
-    <Container
-      flexDirection='row'
-      gap={8}
-      alignItems='center'
-      justifyContent='center'
-      width='100%'
-      paddingY={0}
-      paddingX={8}
-      backgroundColor={colors.secondary}
-      borderRadius={32}
-      sm={{
-        gap: 8 * FACTOR,
-        paddingX: 8 * FACTOR,
-        borderRadius: 32 * FACTOR,
-      }}
-    >
-      <Button
-        flexShrink={0}
-        width={28}
-        aspectRatio={1}
-        backgroundColor={recButtonBg}
-        borderWidth={1}
-        borderColor={colors.secondaryForeground}
-        borderRadius={99}
+    <>
+      <ShaderTunnel.In>
+        <elemMaterial
+          key={ElemMaterial.key}
+          ref={shader}
+          uTexture={props.renderTarget.texture}
+          side={THREE.DoubleSide} // debug
+        />
+      </ShaderTunnel.In>
+
+      <Container
+        flexDirection='row'
+        gap={4}
+        alignItems='center'
+        justifyContent='center'
+        width='100%'
+        paddingY={0}
+        paddingX={10}
+        backgroundColor={colors.secondary}
+        borderRadius={32}
         sm={{
           width: 28 * FACTOR,
           borderRadius: 99 * FACTOR,
