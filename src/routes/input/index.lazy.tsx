@@ -20,7 +20,8 @@ import { useSpringSignal } from '@/utils/use-spring-signal';
 import { Input } from './-components/input';
 import { ShaderTunnel } from './-components/shader';
 
-const FACTOR = 3;
+const MD_FACTOR = 3;
+const SM_FACTOR = 2;
 
 export const Route = createLazyFileRoute('/input/')({
   component: () => (
@@ -59,24 +60,18 @@ function Page() {
 
   const scene = useMemo(() => {
     const scene = new THREE.Scene();
-    scene.background = themes.neutral.light.foreground;
+    scene.background = themes.neutral.light.background;
     return scene;
   }, []);
 
   const forwardObjEvt = useMemo(() => {
-    if (!mesh) {
-      return null;
-    }
-
+    if (!mesh) return null;
     return forwardObjectEvents(mesh, () => camera, scene);
   }, [mesh, camera, scene]);
 
-  const renderTarget = useMemo(() => {
-    return new THREE.WebGLRenderTarget(_width, _height, {
-      minFilter: THREE.LinearFilter,
-      magFilter: THREE.LinearFilter,
-    });
-  }, [_width, _height]);
+  useEffect(() => {
+    renderTarget.setSize(_width, _height);
+  }, [renderTarget, _width, _height]);
 
   useEffect(() => {
     return () => {
@@ -87,10 +82,12 @@ function Page() {
   }, [renderTarget]);
 
   useFrame((state) => {
-    const { gl, clock } = state;
+    const { gl } = state;
 
     // Set the current render target to our FBO
     gl.setRenderTarget(renderTarget);
+
+    gl.clear();
 
     if (forwardObjEvt) {
       forwardObjEvt.update();
@@ -231,98 +228,137 @@ function ChatInput(props: { renderTarget: THREE.WebGLRenderTarget }) {
         backgroundColor={colors.secondary}
         borderRadius={32}
         sm={{
-          width: 28 * FACTOR,
-          borderRadius: 99 * FACTOR,
+          gap: 4 * SM_FACTOR,
+          paddingX: 10 * SM_FACTOR,
+          borderRadius: 32 * SM_FACTOR,
         }}
-        onPointerDown={() => {
-          isRecording.value = true;
-          recRotationZSpring.start(180, {
-            loop: true,
-            config: { duration: 800 },
-          });
-        }}
-        onPointerUp={() => {
-          isRecording.value = false;
-          recRotationZSpring.start(0, {
-            loop: false,
-            config: { duration: undefined },
-          });
+        md={{
+          gap: 4 * MD_FACTOR,
+          paddingX: 10 * MD_FACTOR,
+          borderRadius: 32 * MD_FACTOR,
         }}
       >
-        <Diamond
-          width={12}
-          height={12}
-          color={recIconColor}
-          transformRotateZ={recRotationZ}
+        <Button
+          flexShrink={0}
+          width={36}
+          aspectRatio={1}
+          backgroundColor={recButtonBg}
+          borderWidth={1}
+          borderColor={colors.secondaryForeground}
+          borderRadius={99}
           sm={{
-            width: 12 * FACTOR,
-            height: 12 * FACTOR,
+            width: 28 * SM_FACTOR,
+            borderRadius: 99 * SM_FACTOR,
           }}
-        />
-      </Button>
-
-      <Container width='100%' height='auto' overflow='scroll'>
-        <Container
-          width='100%'
-          height='auto'
-          minHeight={48}
-          backgroundColor={colors.secondary}
-          sm={{
-            minHeight: 40 * FACTOR,
+          md={{
+            width: 28 * MD_FACTOR,
+            borderRadius: 99 * MD_FACTOR,
+          }}
+          onPointerDown={() => {
+            isRecording.value = true;
+            recRotationZSpring.start(180, {
+              loop: true,
+              config: { duration: 800 },
+            });
+          }}
+          onPointerUp={() => {
+            isRecording.value = false;
+            recRotationZSpring.start(0, {
+              loop: false,
+              config: { duration: undefined },
+            });
           }}
         >
-          <Input
-            multiline
-            placeholder='Type your message here'
-            value={inputSignal}
-            onValueChange={(value) => {
-              inputSignal.value = value;
-            }}
-            width='100%'
-            height='100%'
-            paddingY={10}
-            backgroundColor={colors.secondary}
-            borderWidth={0}
-            lineHeight={20}
-            fontSize={14}
+          <Diamond
+            flexShrink={0}
+            width={14}
+            height={14}
+            color={recIconColor}
+            transformRotateZ={recRotationZ}
             sm={{
-              paddingY: 10 * FACTOR,
-              fontSize: 12 * FACTOR,
-              lineHeight: 16 * FACTOR,
+              width: 12 * SM_FACTOR,
+              height: 12 * SM_FACTOR,
+            }}
+            md={{
+              width: 12 * MD_FACTOR,
+              height: 12 * MD_FACTOR,
             }}
           />
-        </Container>
-      </Container>
+        </Button>
 
-      <Button
-        flexShrink={0}
-        width={28}
-        aspectRatio={1}
-        backgroundColor={sendButtonBg}
-        borderWidth={1}
-        borderColor={colors.secondaryForeground}
-        borderRadius={99}
-        sm={{
-          width: 28 * FACTOR,
-          borderRadius: 99 * FACTOR,
-        }}
-        hover={{
-          backgroundOpacity: 0.8,
-        }}
-        onClick={() => {
-          inputSignal.value = '';
-        }}
-      >
-        <MoveUp
-          color={sendIconColor}
-          width={12}
-          height={12}
-          sm={{
-            width: 12 * FACTOR,
-            height: 12 * FACTOR,
+        <Container width='100%' overflow='scroll'>
+          <Container
+            width='100%'
+            minHeight={48}
+            backgroundColor={colors.secondary}
+            sm={{
+              minHeight: 40 * SM_FACTOR,
+            }}
+            md={{
+              minHeight: 40 * MD_FACTOR,
+            }}
+          >
+            <Input
+              multiline
+              placeholder='Type your message here'
+              value={inputSignal}
+              onValueChange={(value) => {
+                inputSignal.value = value;
+              }}
+              paddingY={10}
+              backgroundColor={colors.secondary}
+              borderWidth={0}
+              lineHeight={20}
+              fontSize={16}
+              sm={{
+                paddingY: 10 * SM_FACTOR,
+                fontSize: 12 * SM_FACTOR,
+                lineHeight: 16 * SM_FACTOR,
+              }}
+              md={{
+                paddingY: 10 * MD_FACTOR,
+                fontSize: 12 * MD_FACTOR,
+                lineHeight: 16 * MD_FACTOR,
+              }}
+            />
+          </Container>
+        </Container>
+
+        <Button
+          flexShrink={0}
+          width={36}
+          aspectRatio={1}
+          backgroundColor={sendButtonBg}
+          borderWidth={1}
+          borderColor={colors.secondaryForeground}
+          borderRadius={99}
+          sm={{ width: 28 * SM_FACTOR, borderRadius: 99 * SM_FACTOR }}
+          md={{
+            width: 28 * MD_FACTOR,
+            borderRadius: 99 * MD_FACTOR,
           }}
-        />
-      </Button>
-    </Container>
+          hover={{
+            backgroundOpacity: 0.8,
+          }}
+          onClick={() => {
+            if (inputSignal.value.length > 0) {
+              shaderLeftSideProgress.start(1);
+            }
+          }}
+        >
+          <MoveUp
+            flexShrink={0}
+            width={14}
+            height={14}
+            color={sendIconColor}
+            sm={{ width: 12 * SM_FACTOR, height: 12 * SM_FACTOR }}
+            md={{
+              width: 12 * MD_FACTOR,
+              height: 12 * MD_FACTOR,
+            }}
+          />
+        </Button>
+      </Container>
+    </>
   );
 }
