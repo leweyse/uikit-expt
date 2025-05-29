@@ -8,6 +8,8 @@ import vert from './vert.glsl';
 export const ElemMaterial = shaderMaterial(
   {
     uTime: 0,
+    uProgress: 0,
+    uProgress2: 0,
     uTexture: new Texture(),
   },
   vert,
