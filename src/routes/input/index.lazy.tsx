@@ -1,24 +1,43 @@
+import type { ComponentPropsWithoutRef, ComponentRef, RefObject } from 'react';
+import type { SpringValue } from '@react-spring/three';
+import type * as THREE from 'three';
+
 import type { CustomShaderRef } from '@/types';
 
-import { type ComponentRef, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { forwardObjectEvents } from '@pmndrs/pointer-events';
 import { computed, signal } from '@preact/signals-core';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, useTexture } from '@react-three/drei';
 import { createPortal, useFrame, useThree } from '@react-three/fiber';
-import { Container, Fullscreen } from '@react-three/uikit';
-import { Diamond, MoveUp } from '@react-three/uikit-lucide';
+import { Container, Image, Root, useRootSize } from '@react-three/uikit';
+import { Diamond, MoveUp, RotateCcw } from '@react-three/uikit-lucide';
 import { createLazyFileRoute } from '@tanstack/react-router';
-import * as THREE from 'three';
 
 import { Button } from '@/common/canvas/button';
 import { colors } from '@/common/canvas/theme';
 import { themes } from '@/common/themes';
 import { Canvas } from '@/global/tunnels';
-import { ElemMaterial } from '@/shaders/elem';
+import { useFBO } from '@/utils/use-fbo';
 import { useSpringSignal } from '@/utils/use-spring-signal';
 
+import { Fullscreen } from './-components/fullscreen';
 import { Input } from './-components/input';
-import { ShaderTunnel } from './-components/shader';
+import { InputFirstMaterial } from './-shaders/first';
+import { InputSecondMaterial } from './-shaders/second';
+import {
+  ImageShaderTunnel,
+  ImageTunnel,
+  InputShaderTunnel,
+  ResetTunnel,
+} from './-tunnels';
 
 const MD_FACTOR = 3;
 const SM_FACTOR = 2;
@@ -33,68 +52,63 @@ export const Route = createLazyFileRoute('/input/')({
 
 function Page() {
   const size = useThree((state) => state.size);
-  const viewport = useThree((state) => state.viewport);
 
-  const _width = size.width * viewport.dpr;
-  const _height = size.height * viewport.dpr;
-  const ratio = _width > _height ? _width / _height : _height / _width;
+  const width = size.width;
+  const height = size.height;
 
-  const [mesh, setMesh] = useState<THREE.Mesh | null>(null);
+  const ratio = width > height ? width / height : height / width;
 
-  const outerControls = useRef<ComponentRef<typeof OrbitControls>>(null);
-  const innerControls = useRef<ComponentRef<typeof OrbitControls>>(null);
+  const [inputMesh, setInputMesh] = useState<THREE.Mesh | null>(null);
+  const [imageMesh, setImageMesh] = useState<THREE.Mesh | null>(null);
 
-  const renderTarget = useMemo(() => {
-    return new THREE.WebGLRenderTarget(_width, _height, {
-      type: THREE.HalfFloatType,
-      minFilter: THREE.LinearFilter,
-      magFilter: THREE.LinearFilter,
-    });
-  }, [_width, _height]);
+  const {
+    target: inputBuffer,
+    camera: inputCamera,
+    scene: inputScene,
+  } = useFBO();
+  const {
+    target: imageBuffer,
+    camera: imageCamera,
+    scene: imageScene,
+  } = useFBO();
 
-  const camera = useMemo(() => {
-    const cam = new THREE.PerspectiveCamera(75, _width / _height, 0.1, 1000);
-    cam.position.set(0, 0, 5);
-    return cam;
-  }, [_width, _height]);
+  const forwardInputEvt = useMemo(() => {
+    if (!inputMesh) return null;
+    return forwardObjectEvents(inputMesh, () => inputCamera, inputScene);
+  }, [inputMesh, inputCamera, inputScene]);
 
-  const scene = useMemo(() => {
-    const scene = new THREE.Scene();
-    scene.background = themes.neutral.light.background;
-    return scene;
-  }, []);
-
-  const forwardObjEvt = useMemo(() => {
-    if (!mesh) return null;
-    return forwardObjectEvents(mesh, () => camera, scene);
-  }, [mesh, camera, scene]);
+  const forwardImageEvt = useMemo(() => {
+    if (!imageMesh) return null;
+    return forwardObjectEvents(imageMesh, () => imageCamera, imageScene);
+  }, [imageMesh, imageCamera, imageScene]);
 
   useEffect(() => {
-    renderTarget.setSize(_width, _height);
-  }, [renderTarget, _width, _height]);
-
-  useEffect(() => {
-    return () => {
-      outerControls.current?.reset();
-      innerControls.current?.reset();
-      renderTarget.dispose();
-    };
-  }, [renderTarget]);
+    inputScene.background = themes.neutral.light.background;
+    imageScene.background = themes.neutral.light.background;
+  }, [inputScene, imageScene]);
 
   useFrame((state) => {
     const { gl } = state;
 
-    // Set the current render target to our FBO
-    gl.setRenderTarget(renderTarget);
+    gl.setRenderTarget(inputBuffer);
 
     gl.clear();
 
-    if (forwardObjEvt) {
-      forwardObjEvt.update();
+    if (forwardInputEvt) {
+      forwardInputEvt.update();
     }
 
-    // Render the simulation material with square geometry in the render target
-    gl.render(scene, camera);
+    gl.render(inputScene, inputCamera);
+
+    gl.setRenderTarget(imageBuffer);
+
+    gl.clear();
+
+    if (forwardImageEvt) {
+      forwardImageEvt.update();
+    }
+
+    gl.render(imageScene, imageCamera);
 
     // Revert to the default render target
     gl.setRenderTarget(null);
@@ -102,67 +116,159 @@ function Page() {
 
   return (
     <>
-      <OrbitControls ref={outerControls} />
+      <OrbitControls />
+
+      <Root>
+        <ResetTunnel.Out />
+      </Root>
 
       {createPortal(
-        <Fullscreen distanceToCamera={1} alignItems='center'>
-          {/* Sync with outer controls */}
-          <OrbitControls ref={innerControls} camera={camera} />
-          <ChatInput renderTarget={renderTarget} />
+        <Fullscreen
+          distanceToCamera={2}
+          camera={inputCamera}
+          scene={inputScene}
+          display='flex'
+          alignItems='center'
+        >
+          <ChatInput inputBuffer={inputBuffer} imageBuffer={imageBuffer} />
         </Fullscreen>,
-        scene,
+        inputScene,
       )}
 
-      <mesh ref={setMesh} scale={7 / ratio}>
+      <mesh ref={setInputMesh} scale={7 / ratio}>
         <planeGeometry
           args={[
-            _width > _height ? _width / _height : 1,
-            _width > _height ? 1 : _height / _width,
+            width > height ? width / height : 1,
+            width > height ? 1 : height / width,
             96,
             96,
           ]}
         />
 
-        <ShaderTunnel.Out />
+        <InputShaderTunnel.Out />
+      </mesh>
+
+      {createPortal(
+        <Fullscreen
+          camera={imageCamera}
+          scene={imageScene}
+          display='flex'
+          justifyContent='center'
+          alignItems='center'
+          positionType='relative'
+        >
+          <ImageTunnel.Out />
+        </Fullscreen>,
+        imageScene,
+      )}
+
+      <mesh ref={setImageMesh} scale={7 / ratio} rotation={[0, Math.PI, 0]}>
+        <planeGeometry
+          args={[
+            width > height ? width / height : 1,
+            width > height ? 1 : height / width,
+            96,
+            96,
+          ]}
+        />
+
+        <ImageShaderTunnel.Out />
       </mesh>
     </>
   );
 }
 
-function ChatInput(props: { renderTarget: THREE.WebGLRenderTarget }) {
-  const shader = useRef<CustomShaderRef<typeof ElemMaterial>>(null);
+const ImageWithKnownAspectRatio = ({
+  ref,
+  src,
+  ...props
+}: ComponentPropsWithoutRef<typeof Image> & {
+  ref?: RefObject<{
+    adjustSize: () => void;
+    reset: SpringValue<number>['start'];
+  } | null>;
+}) => {
+  const texture = useTexture(src as string);
+
+  const [aspectRatio, aspectRatioSpring] = useSpringSignal(10);
+
+  useImperativeHandle(ref, () => ({
+    adjustSize: () => {
+      aspectRatioSpring.start(texture.image.width / texture.image.height);
+    },
+    reset: () => {
+      return aspectRatioSpring.start(10);
+    },
+  }));
+
+  return <Image src={src} aspectRatio={aspectRatio} {...props} />;
+};
+
+function ChatInput(props: {
+  inputBuffer: THREE.WebGLRenderTarget;
+  imageBuffer: THREE.WebGLRenderTarget;
+}) {
+  const inputShaderMaterial =
+    useRef<CustomShaderRef<typeof InputFirstMaterial>>(null);
+  const imageShaderMaterial =
+    useRef<CustomShaderRef<typeof InputSecondMaterial>>(null);
+  const imageElem =
+    useRef<ComponentRef<typeof ImageWithKnownAspectRatio>>(null);
+
+  const rootSize = useRootSize();
 
   const inputSignal = useMemo(() => signal(''), []);
   const isRecording = useMemo(() => signal(false), []);
 
   const [recRotationZ, recRotationZSpring] = useSpringSignal(0);
+  const [resetOpacity, resetOpacitySpring] = useSpringSignal(0);
 
   const [_, shaderRightSideProgress] = useSpringSignal(0, {
     config: {
-      friction: 48,
+      mass: 10,
+      tension: 200,
+      friction: 72,
+      clamp: true,
     },
     onChange: (value) => {
-      if (shader.current) {
-        shader.current.uniforms.uProgress2.value = value;
+      if (inputShaderMaterial.current) {
+        inputShaderMaterial.current.uniforms.uProgress2.value = value;
+      }
+
+      if (imageShaderMaterial.current) {
+        imageShaderMaterial.current.uniforms.uProgress2.value = value;
       }
     },
-    onRest: () => {
+    onRest: (signal) => {
       inputSignal.value = '';
+
+      if (signal.value > 0 && imageElem.current) {
+        imageElem.current.adjustSize();
+        resetOpacitySpring.start(signal.value);
+      }
     },
   });
 
-  const [__, shaderLeftSideProgress] = useSpringSignal(0, {
+  const [shaderLeftSide, shaderLeftSideProgress] = useSpringSignal(0, {
     config: {
+      mass: 10,
+      tension: 200,
+      friction: 72,
       clamp: true,
-      duration: 750,
     },
     onChange: (value) => {
-      if (shader.current) {
-        shader.current.uniforms.uProgress.value = value;
+      if (inputShaderMaterial.current) {
+        inputShaderMaterial.current.uniforms.uProgress.value = value;
+      }
+
+      if (imageShaderMaterial.current) {
+        imageShaderMaterial.current.uniforms.uProgress.value = value;
       }
     },
-    onRest: () => {
-      shaderRightSideProgress.start(1);
+    onRest: (signal) => {
+      if (signal.value > 0) {
+        shaderRightSideProgress.start(signal.value);
+      }
     },
   });
 
@@ -198,42 +304,151 @@ function ChatInput(props: { renderTarget: THREE.WebGLRenderTarget }) {
     return colors.secondaryForeground.value;
   });
 
+  const inputPointerEvents = computed(() => {
+    if (shaderLeftSide.value > 0) return 'none';
+    return 'auto';
+  });
+
+  const resetBottom = computed(() => {
+    if (!rootSize.value) return 0;
+    return -(rootSize.value[1] / 2) + 64;
+  });
+
+  const resetPointerEvents = computed(() => {
+    if (resetOpacity.value === 1) return 'auto';
+    return 'none';
+  });
+
+  const submit = () => {
+    if (inputSignal.value.length > 0) {
+      shaderLeftSideProgress.start(1);
+    }
+  };
+
+  const reset = useCallback(() => {
+    recRotationZSpring.start(0);
+
+    if (imageElem.current) {
+      imageElem.current.reset().then(() => {
+        shaderLeftSideProgress.start(0);
+        shaderRightSideProgress.start(0);
+      });
+    }
+
+    resetOpacitySpring.start(0);
+  }, [
+    recRotationZSpring,
+    shaderLeftSideProgress,
+    shaderRightSideProgress,
+    resetOpacitySpring,
+  ]);
+
+  useEffect(() => {
+    return () => reset();
+  }, [reset]);
+
   useFrame((state) => {
     const { clock } = state;
 
-    if (shader.current) {
-      shader.current.uniforms.uTime.value = clock.getElapsedTime();
+    if (inputShaderMaterial.current) {
+      inputShaderMaterial.current.uniforms.uTime.value = clock.getElapsedTime();
+    }
+
+    if (imageShaderMaterial.current) {
+      imageShaderMaterial.current.uniforms.uTime.value = clock.getElapsedTime();
     }
   });
 
   return (
     <>
-      <ShaderTunnel.In>
-        <elemMaterial
-          key={ElemMaterial.key}
-          ref={shader}
-          uTexture={props.renderTarget.texture}
-          side={THREE.DoubleSide} // debug
+      <ResetTunnel.In>
+        <Button
+          variant='ghost'
+          flexShrink={0}
+          positionType='absolute'
+          positionBottom={resetBottom}
+          width={32}
+          height={32}
+          borderRadius={99}
+          backgroundOpacity={resetOpacity}
+          pointerEvents={resetPointerEvents}
+          sm={{
+            width: 28 * SM_FACTOR,
+            height: 28 * SM_FACTOR,
+            borderRadius: 99 * SM_FACTOR,
+          }}
+          md={{
+            width: 28 * MD_FACTOR,
+            height: 28 * MD_FACTOR,
+            borderRadius: 99 * MD_FACTOR,
+          }}
+          onClick={() => reset()}
+        >
+          <RotateCcw
+            flexShrink={0}
+            width={16}
+            height={16}
+            opacity={resetOpacity}
+            sm={{ width: 12 * SM_FACTOR, height: 12 * SM_FACTOR }}
+            md={{ width: 12 * MD_FACTOR, height: 12 * MD_FACTOR }}
+          />
+        </Button>
+      </ResetTunnel.In>
+
+      <ImageTunnel.In>
+        <Suspense fallback={null}>
+          <ImageWithKnownAspectRatio
+            ref={imageElem}
+            src='DAUGHTER_STEREO-MIND-GAMES.jpeg'
+            height='100%'
+            minHeight={48}
+            objectFit='cover'
+            borderRadius={40}
+            sm={{
+              borderRadius: 40 * SM_FACTOR,
+              minHeight: 40 * SM_FACTOR,
+            }}
+            md={{
+              minHeight: 40 * MD_FACTOR,
+            }}
+          />
+        </Suspense>
+      </ImageTunnel.In>
+
+      <InputShaderTunnel.In>
+        <inputFirstMaterial
+          key={InputFirstMaterial.key}
+          ref={inputShaderMaterial}
+          uTexture={props.inputBuffer.texture}
         />
-      </ShaderTunnel.In>
+      </InputShaderTunnel.In>
+
+      <ImageShaderTunnel.In>
+        <inputSecondMaterial
+          key={InputSecondMaterial.key}
+          ref={imageShaderMaterial}
+          uTexture={props.imageBuffer.texture}
+        />
+      </ImageShaderTunnel.In>
 
       <Container
         flexDirection='row'
-        gap={4}
         alignItems='center'
         justifyContent='center'
         width='100%'
-        paddingY={0}
-        paddingX={10}
+        gap={4}
+        paddingY={2}
+        paddingX={12}
         backgroundColor={colors.secondary}
         borderRadius={32}
+        pointerEvents={inputPointerEvents}
         sm={{
           gap: 4 * SM_FACTOR,
           paddingX: 10 * SM_FACTOR,
           borderRadius: 32 * SM_FACTOR,
         }}
         md={{
-          gap: 4 * MD_FACTOR,
+          gap: 6 * MD_FACTOR,
           paddingX: 10 * MD_FACTOR,
           borderRadius: 32 * MD_FACTOR,
         }}
@@ -256,7 +471,7 @@ function ChatInput(props: { renderTarget: THREE.WebGLRenderTarget }) {
           }}
           onPointerDown={() => {
             isRecording.value = true;
-            recRotationZSpring.start(180, {
+            recRotationZSpring.start(-180, {
               loop: true,
               config: { duration: 800 },
             });
@@ -340,11 +555,7 @@ function ChatInput(props: { renderTarget: THREE.WebGLRenderTarget }) {
           hover={{
             backgroundOpacity: 0.8,
           }}
-          onClick={() => {
-            if (inputSignal.value.length > 0) {
-              shaderLeftSideProgress.start(1);
-            }
-          }}
+          onClick={submit}
         >
           <MoveUp
             flexShrink={0}

@@ -5,7 +5,7 @@ import { Texture } from 'three';
 import frag from './frag.glsl';
 import vert from './vert.glsl';
 
-export const ElemMaterial = shaderMaterial(
+export const InputFirstMaterial = shaderMaterial(
   {
     uTime: 0,
     uProgress: 0,
@@ -16,4 +16,4 @@ export const ElemMaterial = shaderMaterial(
   frag,
 );
 
-extend({ ElemMaterial });
+extend({ InputFirstMaterial });
