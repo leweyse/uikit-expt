@@ -436,7 +436,6 @@ function ChatInput(props: {
         alignItems='center'
         justifyContent='center'
         width='100%'
-        gap={4}
         paddingY={2}
         paddingX={12}
         backgroundColor={colors.secondary}
