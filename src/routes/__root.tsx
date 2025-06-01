@@ -3,6 +3,7 @@ import { noEvents, PointerEvents } from '@react-three/xr';
 import { createRootRoute, Link, Outlet } from '@tanstack/react-router';
 
 import { Canvas as CanvasTunnel } from '@/global/tunnels';
+import { FontFamilyProvider } from '@react-three/uikit';
 
 export const Route = createRootRoute({
   component: Root,
@@ -23,7 +24,10 @@ function Root() {
         events={noEvents}
       >
         <PointerEvents />
-        <CanvasTunnel.Out />
+
+        <FontFamilyProvider satoshi={{ normal: '/satoshi/satoshi-uikit.json' }}>
+          <CanvasTunnel.Out />
+        </FontFamilyProvider>
       </Canvas>
 
       <Outlet />
