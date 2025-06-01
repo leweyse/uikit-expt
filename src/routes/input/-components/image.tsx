@@ -26,7 +26,14 @@ export const Image = ({
       aspectRatioSpring.start(texture.image.width / texture.image.height);
     },
     reset: () => {
-      return aspectRatioSpring.start(10);
+      return aspectRatioSpring.start(10, {
+        config: {
+          mass: 10,
+          tension: 200,
+          friction: 72,
+          clamp: true,
+        },
+      });
     },
   }));
 
