@@ -21,7 +21,6 @@ export const useFBO = () => {
   const scene = useRef(new THREE.Scene());
 
   useEffect(() => {
-    camera.current.position.set(0, 0, 5);
     camera.current.aspect = size.width / size.height;
   }, [size]);
 

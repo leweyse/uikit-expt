@@ -13,13 +13,14 @@ import {
 } from 'react';
 import { forwardObjectEvents } from '@pmndrs/pointer-events';
 import { computed, signal } from '@preact/signals-core';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { createPortal, useFrame } from '@react-three/fiber';
 import { Container, Root, useRootSize } from '@react-three/uikit';
 import { Diamond, MoveUp, RotateCcw } from '@react-three/uikit-lucide';
 import { createLazyFileRoute } from '@tanstack/react-router';
 
 import { Button } from '@/common/canvas/button';
+import { Fullscreen } from '@/common/canvas/fullscreen';
 import { colors } from '@/common/canvas/theme';
 import { Github, Reference } from '@/common/dom/reference';
 import { themes } from '@/common/themes';
@@ -28,7 +29,6 @@ import { WrapMaterial } from '@/shaders/wrap';
 import { useFBO } from '@/utils/use-fbo';
 import { useSpringSignal } from '@/utils/use-spring-signal';
 
-import { Fullscreen } from './-components/fullscreen';
 import { Image } from './-components/image';
 import { Input } from './-components/input';
 import { Mesh } from './-components/mesh';
@@ -51,6 +51,9 @@ export const Route = createLazyFileRoute('/input/')({
 
       <Canvas.In>
         <OrbitControls />
+
+        {/* Reset orbit controls */}
+        <PerspectiveCamera makeDefault position={[0, 0, 8]} />
 
         <Prompt />
       </Canvas.In>
@@ -123,9 +126,7 @@ function Prompt() {
 
   return (
     <>
-      <Root>
-        <ResetTunnel.Out />
-      </Root>
+      <ResetTunnel.Out />
 
       {createPortal(
         <Fullscreen
@@ -140,7 +141,8 @@ function Prompt() {
         inputScene as unknown as THREE.Object3D,
       )}
 
-      <Mesh ref={setInputMesh}>
+      {/* position the mesh behind the reset button */}
+      <Mesh ref={setInputMesh} position={[0, 0, -0.1]}>
         <InputShaderTunnel.Out />
       </Mesh>
 
@@ -158,7 +160,12 @@ function Prompt() {
         imageScene as unknown as THREE.Object3D,
       )}
 
-      <Mesh ref={setImageMesh} rotation={[0, Math.PI, 0]}>
+      {/* position the mesh behind the reset button */}
+      <Mesh
+        ref={setImageMesh}
+        rotation={[0, Math.PI, 0]}
+        position={[0, 0, -0.1]}
+      >
         <ImageShaderTunnel.Out />
       </Mesh>
     </>
@@ -271,7 +278,7 @@ function ChatInput(props: {
 
   const resetBottom = computed(() => {
     if (!rootSize.value) return 0;
-    return -(rootSize.value[1] / 2) + 64;
+    return -(rootSize.value[1] / 4) + 64;
   });
 
   const resetPointerEvents = computed(() => {
@@ -286,6 +293,8 @@ function ChatInput(props: {
   };
 
   const reset = useCallback(() => {
+    inputSignal.value = '';
+
     recRotationZSpring.start(0);
 
     if (imageElem.current) {
@@ -297,6 +306,7 @@ function ChatInput(props: {
 
     resetOpacitySpring.start(0);
   }, [
+    inputSignal,
     recRotationZSpring,
     shaderLeftSideProgress,
     shaderRightSideProgress,
@@ -322,37 +332,36 @@ function ChatInput(props: {
   return (
     <>
       <ResetTunnel.In>
-        <Button
-          variant='ghost'
-          flexShrink={0}
-          positionType='absolute'
-          positionBottom={resetBottom}
+        <Root
           width={32}
           height={32}
-          borderRadius={99}
-          backgroundOpacity={resetOpacity}
-          pointerEvents={resetPointerEvents}
-          sm={{
-            width: 28 * SM_FACTOR,
-            height: 28 * SM_FACTOR,
-            borderRadius: 99 * SM_FACTOR,
-          }}
-          md={{
-            width: 28 * MD_FACTOR,
-            height: 28 * MD_FACTOR,
-            borderRadius: 99 * MD_FACTOR,
-          }}
-          onClick={() => reset()}
+          justifyContent='center'
+          alignItems='center'
+          positionBottom={resetBottom}
         >
-          <RotateCcw
+          <Button
+            variant='ghost'
             flexShrink={0}
-            width={16}
-            height={16}
-            opacity={resetOpacity}
-            sm={{ width: 12 * SM_FACTOR, height: 12 * SM_FACTOR }}
-            md={{ width: 12 * MD_FACTOR, height: 12 * MD_FACTOR }}
-          />
-        </Button>
+            padding={0}
+            width={32}
+            height={32}
+            borderRadius={99}
+            backgroundOpacity={resetOpacity}
+            pointerEvents={resetPointerEvents}
+            onClick={() => {
+              if (resetPointerEvents.value === 'auto') {
+                reset();
+              }
+            }}
+          >
+            <RotateCcw
+              flexShrink={0}
+              width={16}
+              height={16}
+              opacity={resetOpacity}
+            />
+          </Button>
+        </Root>
       </ResetTunnel.In>
 
       <ImageTunnel.In>
