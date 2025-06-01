@@ -1,7 +1,9 @@
 import { Canvas } from '@react-three/fiber';
+import { noEvents, PointerEvents } from '@react-three/xr';
 import { createRootRoute, Link, Outlet } from '@tanstack/react-router';
 
 import { Canvas as CanvasTunnel } from '@/global/tunnels';
+import { FontFamilyProvider } from '@react-three/uikit';
 
 export const Route = createRootRoute({
   component: Root,
@@ -16,8 +18,16 @@ function Root() {
         </Link>
       </div>
 
-      <Canvas gl={{ localClippingEnabled: true }} className='!fixed !inset-0'>
-        <CanvasTunnel.Out />
+      <Canvas
+        gl={{ localClippingEnabled: true }}
+        className='!fixed !inset-0'
+        events={noEvents}
+      >
+        <PointerEvents />
+
+        <FontFamilyProvider satoshi={{ normal: '/satoshi/satoshi-uikit.json' }}>
+          <CanvasTunnel.Out />
+        </FontFamilyProvider>
       </Canvas>
 
       <Outlet />

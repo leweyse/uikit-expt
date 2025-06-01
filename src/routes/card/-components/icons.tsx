@@ -1,22 +1,7 @@
 import type { FC } from 'react';
 import type { Color } from 'three';
 
-import { shaderMaterial } from '@react-three/drei';
-import { extend } from '@react-three/fiber';
-
-import { themes } from '@/common/themes';
-import gridFrag from '@/shaders/grid/frag.glsl';
-import gridVert from '@/shaders/grid/vert.glsl';
-
-const GridMaterial = shaderMaterial(
-  {
-    edgeColor: themes.neutral.light.foreground,
-  },
-  gridVert,
-  gridFrag,
-);
-
-extend({ GridMaterial });
+import { EdgeMaterial } from '@/shaders/edge';
 
 const columns = Array.from({ length: 3 }).map((_, i) => i);
 
@@ -30,8 +15,7 @@ export const Columns: FC<Props> = ({ edgeColor }) => {
       {columns.map((i) => (
         <mesh key={i} position={[i * 0.3, 0, 0]}>
           <boxGeometry args={[0.175, 1, 1]} />
-          {/* @ts-expect-error - not sure how to type this */}
-          <gridMaterial key={GridMaterial.key} edgeColor={edgeColor} />
+          <edgeMaterial key={EdgeMaterial.key} edgeColor={edgeColor} />
         </mesh>
       ))}
     </group>
@@ -53,8 +37,7 @@ export const Cubes: FC<Props> = ({ edgeColor }) => {
       {Object.entries(cubes).map(([idx, pos]) => (
         <mesh key={idx} position={pos}>
           <boxGeometry args={[1, 1, 1]} />
-          {/* @ts-expect-error - not sure how to type this */}
-          <gridMaterial key={GridMaterial.key} edgeColor={edgeColor} />
+          <edgeMaterial key={EdgeMaterial.key} edgeColor={edgeColor} />
         </mesh>
       ))}
     </group>

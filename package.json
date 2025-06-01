@@ -10,11 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@pmndrs/pointer-events": "^6.6.16",
     "@preact/signals-core": "^1.8.0",
-    "@react-spring/three": "10.0.0-beta.0",
+    "@react-spring/three": "10.0.1",
     "@react-three/drei": "^10.0.6",
     "@react-three/fiber": "^9.1.2",
-    "@react-three/uikit": "^0.8.15",
+    "@react-three/uikit": "^0.8.19",
+    "@react-three/uikit-lucide": "^0.8.19",
+    "@react-three/xr": "^6.6.16",
     "@tanstack/react-router": "^1.119.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
