@@ -3,9 +3,9 @@ import type { SpringValue } from '@react-spring/three';
 
 import { useImperativeHandle } from 'react';
 import { useTexture } from '@react-three/drei';
-import { useSpringSignal } from '@/utils/use-spring-signal';
-
 import { Image as ImagePrimitive } from '@react-three/uikit';
+
+import { useSpringSignal } from '@/utils/use-spring-signal';
 
 export const Image = ({
   ref,

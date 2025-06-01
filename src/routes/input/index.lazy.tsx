@@ -21,37 +21,52 @@ import { createLazyFileRoute } from '@tanstack/react-router';
 
 import { Button } from '@/common/canvas/button';
 import { colors } from '@/common/canvas/theme';
+import { Github, Reference } from '@/common/dom/reference';
 import { themes } from '@/common/themes';
-import { Canvas } from '@/global/tunnels';
+import { Canvas, Footer, Header } from '@/global/tunnels';
+import { WrapMaterial } from '@/shaders/wrap';
 import { useFBO } from '@/utils/use-fbo';
 import { useSpringSignal } from '@/utils/use-spring-signal';
 
 import { Fullscreen } from './-components/fullscreen';
+import { Image } from './-components/image';
 import { Input } from './-components/input';
 import { Mesh } from './-components/mesh';
-import { Image } from './-components/image';
 import {
   ImageShaderTunnel,
   ImageTunnel,
   InputShaderTunnel,
   ResetTunnel,
 } from './-tunnels';
-import { WrapMaterial } from '@/shaders/wrap';
 
 const MD_FACTOR = 3;
 const SM_FACTOR = 2;
 
 export const Route = createLazyFileRoute('/input/')({
   component: () => (
-    <Canvas.In>
-      <Page />
-    </Canvas.In>
+    <>
+      <Header.In>
+        <Github href='https://github.com/leweyse/uikit-expt/blob/main/src/routes/input/index.lazy.tsx' />
+      </Header.In>
+
+      <Canvas.In>
+        <OrbitControls />
+
+        <Prompt />
+      </Canvas.In>
+
+      <Footer.In>
+        <Reference href='https://x.com/AlexFisla/status/1922690522633642060'>
+          AlexFisla
+        </Reference>
+      </Footer.In>
+    </>
   ),
 });
 
-function Page() {
-  const [inputMesh, setInputMesh] = useState<THREE.Mesh | null>(null);
-  const [imageMesh, setImageMesh] = useState<THREE.Mesh | null>(null);
+function Prompt() {
+  const [inputMesh, setInputMesh] = useState<THREE.Object3D | null>(null);
+  const [imageMesh, setImageMesh] = useState<THREE.Object3D | null>(null);
 
   const {
     target: inputBuffer,
@@ -108,8 +123,6 @@ function Page() {
 
   return (
     <>
-      <OrbitControls />
-
       <Root>
         <ResetTunnel.Out />
       </Root>
@@ -124,7 +137,7 @@ function Page() {
         >
           <ChatInput inputBuffer={inputBuffer} imageBuffer={imageBuffer} />
         </Fullscreen>,
-        inputScene,
+        inputScene as unknown as THREE.Object3D,
       )}
 
       <Mesh ref={setInputMesh}>
@@ -142,7 +155,7 @@ function Page() {
         >
           <ImageTunnel.Out />
         </Fullscreen>,
-        imageScene,
+        imageScene as unknown as THREE.Object3D,
       )}
 
       <Mesh ref={setImageMesh} rotation={[0, Math.PI, 0]}>
@@ -160,8 +173,7 @@ function ChatInput(props: {
     useRef<CustomShaderRef<typeof WrapMaterial>>(null);
   const imageShaderMaterial =
     useRef<CustomShaderRef<typeof WrapMaterial>>(null);
-  const imageElem =
-    useRef<ComponentRef<typeof Image>>(null);
+  const imageElem = useRef<ComponentRef<typeof Image>>(null);
 
   const rootSize = useRootSize();
 

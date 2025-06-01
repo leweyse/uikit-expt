@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import type { ComponentProps, FC } from 'react';
 import type { SpringValue } from '@react-spring/three';
 import type { Color } from 'three';
 
@@ -55,7 +55,12 @@ export const useCardIcon = () => {
 
 const AnimatedIconProvider = animated(IconProvider.Provider);
 
-const CardInternal: FC<PropsWithChildren> = ({ children }) => {
+type CardInternalProps = Omit<
+  ComponentProps<typeof Container>,
+  'onPointerOver' | 'onPointerLeave'
+>;
+
+const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
   const { label, description } = useTunnels();
 
   const [inset, insetSpring] = useSpringSignal(0);
@@ -79,6 +84,7 @@ const CardInternal: FC<PropsWithChildren> = ({ children }) => {
       width='100%'
       padding={24}
       gap={20}
+      {...props}
       onPointerOver={() => {
         edgeColorSpring.start(themes.violet.light.primary);
 
@@ -204,7 +210,7 @@ export const CardDescription: FC<PropsWithChildren> = ({ children }) => {
   );
 };
 
-export const Card: FC<PropsWithChildren> = ({ children }) => {
+export const Card: FC<CardInternalProps> = ({ children, ...props }) => {
   const tunnels = useMemo(() => {
     return {
       label: tunnel(),
@@ -214,7 +220,7 @@ export const Card: FC<PropsWithChildren> = ({ children }) => {
 
   return (
     <TunnelsProvider value={tunnels}>
-      <CardInternal>{children}</CardInternal>
+      <CardInternal {...props}>{children}</CardInternal>
     </TunnelsProvider>
   );
 };
