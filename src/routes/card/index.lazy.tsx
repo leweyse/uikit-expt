@@ -3,7 +3,8 @@ import { OrbitControls, OrthographicCamera } from '@react-three/drei';
 import { Content, Root, Text } from '@react-three/uikit';
 import { createLazyFileRoute } from '@tanstack/react-router';
 
-import { Canvas } from '@/global/tunnels';
+import { Github, Reference } from '@/common/dom/reference';
+import { Canvas, Footer, Header } from '@/global/tunnels';
 
 import {
   Card,
@@ -14,7 +15,27 @@ import {
 import { Columns, Cubes } from './-components/icons';
 
 export const Route = createLazyFileRoute('/card/')({
-  component: Page,
+  component: () => (
+    <>
+      <Header.In>
+        <Github href='https://github.com/leweyse/uikit-expt/blob/main/src/routes/card/index.lazy.tsx' />
+      </Header.In>
+
+      <Canvas.In>
+        <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={100} />
+
+        <OrbitControls />
+
+        <Cards />
+      </Canvas.In>
+
+      <Footer.In>
+        <Reference href='https://x.com/thomasauros/status/1910715343045001648'>
+          thomasauros
+        </Reference>
+      </Footer.In>
+    </>
+  ),
 });
 
 const AnimatedColumns = animated(Columns);
@@ -35,47 +56,44 @@ const InteractiveCubes = () => {
   return <AnimatedCubes edgeColor={edgeColor} />;
 };
 
-function Page() {
+function Cards() {
   return (
-    <Canvas.In>
-      <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={100} />
+    <Root display='flex' flexDirection='column' width={450} gap={6}>
+      <Card alignItems='flex-start'>
+        <CardLabel>
+          <Text>UIKIT</Text>
+        </CardLabel>
 
-      <OrbitControls />
+        <CardDescription>
+          <Text>
+            Build performant 3D user interfaces for threejs using R3F and yoga.
+            Perfect for games, XR (VR/AR), and any web-based Spatial Computing
+            App.
+          </Text>
+        </CardDescription>
 
-      <Root display='flex' flexDirection='column' width={450} gap={6}>
-        <Card>
-          <CardLabel>
-            <Text>Relay</Text>
-          </CardLabel>
+        <Content transformScale={0.75}>
+          <InteractiveColumns />
+        </Content>
+      </Card>
 
-          <CardDescription>
-            <Text>
-              A network proxy for encrypting and decrypting data in transit.
-            </Text>
-          </CardDescription>
+      <Card alignItems='flex-start'>
+        <CardLabel>
+          <Text>R3F</Text>
+        </CardLabel>
 
-          <Content transformScale={0.75}>
-            <InteractiveColumns />
-          </Content>
-        </Card>
+        <CardDescription>
+          <Text>
+            Build your scene declaratively with re-usable, self-contained
+            components that react to state, are readily interactive and can
+            participate in React's ecosystem.
+          </Text>
+        </CardDescription>
 
-        <Card>
-          <CardLabel>
-            <Text>Enclaves</Text>
-          </CardLabel>
-
-          <CardDescription>
-            <Text>
-              Build, deploy and scale applications in a Confidential Computing
-              environment.
-            </Text>
-          </CardDescription>
-
-          <Content transformScale={1.1}>
-            <InteractiveCubes />
-          </Content>
-        </Card>
-      </Root>
-    </Canvas.In>
+        <Content transformScale={1.1}>
+          <InteractiveCubes />
+        </Content>
+      </Card>
+    </Root>
   );
 }

@@ -11,16 +11,11 @@ export const useFBO = () => {
       type: THREE.HalfFloatType,
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
-    })
+    }),
   );
 
   const camera = useRef(
-    new THREE.PerspectiveCamera(
-      75,
-      size.width / size.height,
-      0.1,
-      1000,
-    )
+    new THREE.PerspectiveCamera(75, size.width / size.height, 0.1, 1000),
   );
 
   const scene = useRef(new THREE.Scene());
@@ -39,7 +34,7 @@ export const useFBO = () => {
 
   useEffect(() => {
     return () => target.current.dispose();
-  }, [target]);
+  }, []);
 
   return {
     target: target.current,

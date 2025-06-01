@@ -6,7 +6,12 @@ import { forwardRef, useEffect, useMemo, useRef } from 'react';
 import { batch, signal } from '@preact/signals-core';
 import { createPortal, useFrame, useStore, useThree } from '@react-three/fiber';
 import { Root } from '@react-three/uikit';
-import { OrthographicCamera, PerspectiveCamera, type Scene } from 'three';
+import {
+  type Object3D,
+  OrthographicCamera,
+  PerspectiveCamera,
+  type Scene,
+} from 'three';
 
 export type Camera = OrthographicCamera | PerspectiveCamera;
 
@@ -140,6 +145,6 @@ export const Fullscreen: (
         {properties.children}
       </Root>
     </group>,
-    __camera,
+    __camera as unknown as Object3D,
   );
 });
