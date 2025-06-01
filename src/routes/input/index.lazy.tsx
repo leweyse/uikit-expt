@@ -36,6 +36,7 @@ import {
   InputShaderTunnel,
   ResetTunnel,
 } from './-tunnels';
+import { WrapMaterial } from '@/shaders/wrap';
 
 const MD_FACTOR = 3;
 const SM_FACTOR = 2;
@@ -156,9 +157,9 @@ function ChatInput(props: {
   imageBuffer: THREE.WebGLRenderTarget;
 }) {
   const inputShaderMaterial =
-    useRef<CustomShaderRef<typeof InputFirstMaterial>>(null);
+    useRef<CustomShaderRef<typeof WrapMaterial>>(null);
   const imageShaderMaterial =
-    useRef<CustomShaderRef<typeof InputSecondMaterial>>(null);
+    useRef<CustomShaderRef<typeof WrapMaterial>>(null);
   const imageElem =
     useRef<ComponentRef<typeof Image>>(null);
 
@@ -363,18 +364,19 @@ function ChatInput(props: {
       </ImageTunnel.In>
 
       <InputShaderTunnel.In>
-        <inputFirstMaterial
-          key={InputFirstMaterial.key}
+        <wrapMaterial
+          key={WrapMaterial.key}
           ref={inputShaderMaterial}
           uTexture={props.inputBuffer.texture}
         />
       </InputShaderTunnel.In>
 
       <ImageShaderTunnel.In>
-        <inputSecondMaterial
-          key={InputSecondMaterial.key}
+        <wrapMaterial
+          key={WrapMaterial.key}
           ref={imageShaderMaterial}
           uTexture={props.imageBuffer.texture}
+          uBackFace={1}
         />
       </ImageShaderTunnel.In>
 
