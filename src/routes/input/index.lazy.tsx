@@ -1,5 +1,4 @@
-import type { ComponentPropsWithoutRef, ComponentRef, RefObject } from 'react';
-import type { SpringValue } from '@react-spring/three';
+import type { ComponentRef } from 'react';
 import type * as THREE from 'three';
 
 import type { CustomShaderRef } from '@/types';
@@ -8,16 +7,15 @@ import {
   Suspense,
   useCallback,
   useEffect,
-  useImperativeHandle,
   useMemo,
   useRef,
   useState,
 } from 'react';
 import { forwardObjectEvents } from '@pmndrs/pointer-events';
 import { computed, signal } from '@preact/signals-core';
-import { OrbitControls, useTexture } from '@react-three/drei';
-import { createPortal, useFrame, useThree } from '@react-three/fiber';
-import { Container, Image, Root, useRootSize } from '@react-three/uikit';
+import { OrbitControls } from '@react-three/drei';
+import { createPortal, useFrame } from '@react-three/fiber';
+import { Container, Root, useRootSize } from '@react-three/uikit';
 import { Diamond, MoveUp, RotateCcw } from '@react-three/uikit-lucide';
 import { createLazyFileRoute } from '@tanstack/react-router';
 
@@ -30,8 +28,8 @@ import { useSpringSignal } from '@/utils/use-spring-signal';
 
 import { Fullscreen } from './-components/fullscreen';
 import { Input } from './-components/input';
-import { InputFirstMaterial } from './-shaders/first';
-import { InputSecondMaterial } from './-shaders/second';
+import { Mesh } from './-components/mesh';
+import { Image } from './-components/image';
 import {
   ImageShaderTunnel,
   ImageTunnel,
@@ -51,13 +49,6 @@ export const Route = createLazyFileRoute('/input/')({
 });
 
 function Page() {
-  const size = useThree((state) => state.size);
-
-  const width = size.width;
-  const height = size.height;
-
-  const ratio = width > height ? width / height : height / width;
-
   const [inputMesh, setInputMesh] = useState<THREE.Mesh | null>(null);
   const [imageMesh, setImageMesh] = useState<THREE.Mesh | null>(null);
 
@@ -135,18 +126,9 @@ function Page() {
         inputScene,
       )}
 
-      <mesh ref={setInputMesh} scale={7 / ratio}>
-        <planeGeometry
-          args={[
-            width > height ? width / height : 1,
-            width > height ? 1 : height / width,
-            96,
-            96,
-          ]}
-        />
-
+      <Mesh ref={setInputMesh}>
         <InputShaderTunnel.Out />
-      </mesh>
+      </Mesh>
 
       {createPortal(
         <Fullscreen
@@ -162,47 +144,12 @@ function Page() {
         imageScene,
       )}
 
-      <mesh ref={setImageMesh} scale={7 / ratio} rotation={[0, Math.PI, 0]}>
-        <planeGeometry
-          args={[
-            width > height ? width / height : 1,
-            width > height ? 1 : height / width,
-            96,
-            96,
-          ]}
-        />
-
+      <Mesh ref={setImageMesh} rotation={[0, Math.PI, 0]}>
         <ImageShaderTunnel.Out />
-      </mesh>
+      </Mesh>
     </>
   );
 }
-
-const ImageWithKnownAspectRatio = ({
-  ref,
-  src,
-  ...props
-}: ComponentPropsWithoutRef<typeof Image> & {
-  ref?: RefObject<{
-    adjustSize: () => void;
-    reset: SpringValue<number>['start'];
-  } | null>;
-}) => {
-  const texture = useTexture(src as string);
-
-  const [aspectRatio, aspectRatioSpring] = useSpringSignal(10);
-
-  useImperativeHandle(ref, () => ({
-    adjustSize: () => {
-      aspectRatioSpring.start(texture.image.width / texture.image.height);
-    },
-    reset: () => {
-      return aspectRatioSpring.start(10);
-    },
-  }));
-
-  return <Image src={src} aspectRatio={aspectRatio} {...props} />;
-};
 
 function ChatInput(props: {
   inputBuffer: THREE.WebGLRenderTarget;
@@ -213,7 +160,7 @@ function ChatInput(props: {
   const imageShaderMaterial =
     useRef<CustomShaderRef<typeof InputSecondMaterial>>(null);
   const imageElem =
-    useRef<ComponentRef<typeof ImageWithKnownAspectRatio>>(null);
+    useRef<ComponentRef<typeof Image>>(null);
 
   const rootSize = useRootSize();
 
@@ -397,7 +344,7 @@ function ChatInput(props: {
 
       <ImageTunnel.In>
         <Suspense fallback={null}>
-          <ImageWithKnownAspectRatio
+          <Image
             ref={imageElem}
             src='DAUGHTER_STEREO-MIND-GAMES.jpeg'
             height='100%'
