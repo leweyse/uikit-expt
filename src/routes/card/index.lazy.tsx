@@ -22,9 +22,9 @@ export const Route = createLazyFileRoute('/card/')({
       </Header.In>
 
       <Canvas.In>
-        <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={100} />
-
         <OrbitControls />
+
+        <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={100} />
 
         <Cards />
       </Canvas.In>

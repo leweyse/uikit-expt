@@ -2,7 +2,9 @@ import type { ThreeElements } from '@react-three/fiber';
 
 import { useThree } from '@react-three/fiber';
 
-export const Mesh = ({ ref, children, ...props }: ThreeElements['mesh']) => {
+type Props = Omit<ThreeElements['mesh'], 'scale'>;
+
+export const Mesh = ({ ref, children, ...props }: Props) => {
   const size = useThree((state) => state.size);
   const viewport = useThree((state) => state.viewport);
 
