@@ -13,7 +13,7 @@ import {
 } from 'react';
 import { forwardObjectEvents } from '@pmndrs/pointer-events';
 import { computed, signal } from '@preact/signals-core';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { CameraControls, PerspectiveCamera } from '@react-three/drei';
 import { createPortal, useFrame } from '@react-three/fiber';
 import { Container, Root, useRootSize } from '@react-three/uikit';
 import { Diamond, MoveUp, RotateCcw } from '@react-three/uikit-lucide';
@@ -50,9 +50,9 @@ export const Route = createLazyFileRoute('/input/')({
       </Header.In>
 
       <Canvas.In>
-        <OrbitControls />
+        <CameraControls />
 
-        {/* Reset orbit controls */}
+        {/* Reset camera controls */}
         <PerspectiveCamera makeDefault position={[0, 0, 8]} />
 
         <Prompt />

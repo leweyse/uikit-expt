@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { forwardObjectEvents } from '@pmndrs/pointer-events';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { CameraControls } from '@react-three/drei';
 import {
   createPortal,
   type ThreeElements,
@@ -28,10 +28,7 @@ export const Route = createLazyFileRoute('/')({
       </Header.In>
 
       <Canvas.In>
-        <OrbitControls />
-
-        {/* Reset orbit controls */}
-        <PerspectiveCamera makeDefault position={[0, 0, 8]} />
+        <CameraControls />
 
         <Welcome />
       </Canvas.In>
