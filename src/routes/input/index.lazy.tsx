@@ -363,9 +363,6 @@ function ChatInput(props: {
           <Image
             ref={imageElem}
             src='DAUGHTER_STEREO-MIND-GAMES.jpeg'
-            height='100%'
-            minHeight={48}
-            objectFit='cover'
             borderRadius={40}
             sm={{
               borderRadius: 40 * SM_FACTOR,

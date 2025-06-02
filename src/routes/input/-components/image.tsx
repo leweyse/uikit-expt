@@ -14,19 +14,21 @@ export const Image = ({
 }: ComponentPropsWithoutRef<typeof ImagePrimitive> & {
   ref?: RefObject<{
     adjustSize: () => void;
-    reset: SpringValue<number>['start'];
+    reset: SpringValue<`${number}%`>['start'];
   } | null>;
 }) => {
   const texture = useTexture(src as string);
 
+  const [maxHeight, maxHeightSpring] = useSpringSignal('0%' as `${number}%`);
   const [aspectRatio, aspectRatioSpring] = useSpringSignal(10);
 
   useImperativeHandle(ref, () => ({
     adjustSize: () => {
+      maxHeightSpring.start('100%');
       aspectRatioSpring.start(texture.image.width / texture.image.height);
     },
     reset: () => {
-      return aspectRatioSpring.start(10, {
+      aspectRatioSpring.start(10, {
         config: {
           mass: 10,
           tension: 200,
@@ -34,8 +36,19 @@ export const Image = ({
           clamp: true,
         },
       });
+      return maxHeightSpring.start('0%');
     },
   }));
 
-  return <ImagePrimitive src={src} aspectRatio={aspectRatio} {...props} />;
+  return (
+    <ImagePrimitive
+      src={src}
+      height='100%'
+      minHeight={48}
+      maxHeight={maxHeight}
+      aspectRatio={aspectRatio}
+      objectFit='cover'
+      {...props}
+    />
+  );
 };
