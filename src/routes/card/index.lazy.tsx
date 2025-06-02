@@ -1,5 +1,5 @@
 import { animated } from '@react-spring/three';
-import { OrbitControls, OrthographicCamera } from '@react-three/drei';
+import { CameraControls, OrthographicCamera } from '@react-three/drei';
 import { Content, Root, Text } from '@react-three/uikit';
 import { createLazyFileRoute } from '@tanstack/react-router';
 
@@ -22,7 +22,7 @@ export const Route = createLazyFileRoute('/card/')({
       </Header.In>
 
       <Canvas.In>
-        <OrbitControls />
+        <CameraControls />
 
         <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={100} />
 

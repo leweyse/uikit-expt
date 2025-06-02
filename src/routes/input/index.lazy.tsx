@@ -13,7 +13,7 @@ import {
 } from 'react';
 import { forwardObjectEvents } from '@pmndrs/pointer-events';
 import { computed, signal } from '@preact/signals-core';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { CameraControls, PerspectiveCamera } from '@react-three/drei';
 import { createPortal, useFrame } from '@react-three/fiber';
 import { Container, Root, useRootSize } from '@react-three/uikit';
 import { Diamond, MoveUp, RotateCcw } from '@react-three/uikit-lucide';
@@ -23,7 +23,6 @@ import { Button } from '@/common/canvas/button';
 import { Fullscreen } from '@/common/canvas/fullscreen';
 import { colors } from '@/common/canvas/theme';
 import { Github, Reference } from '@/common/dom/reference';
-import { themes } from '@/common/themes';
 import { Canvas, Footer, Header } from '@/global/tunnels';
 import { WrapMaterial } from '@/shaders/wrap';
 import { useFBO } from '@/utils/use-fbo';
@@ -50,9 +49,9 @@ export const Route = createLazyFileRoute('/input/')({
       </Header.In>
 
       <Canvas.In>
-        <OrbitControls />
+        <CameraControls />
 
-        {/* Reset orbit controls */}
+        {/* Reset camera controls */}
         <PerspectiveCamera makeDefault position={[0, 0, 8]} />
 
         <Prompt />
@@ -91,11 +90,6 @@ function Prompt() {
     if (!imageMesh) return null;
     return forwardObjectEvents(imageMesh, () => imageCamera, imageScene);
   }, [imageMesh, imageCamera, imageScene]);
-
-  useEffect(() => {
-    inputScene.background = themes.neutral.light.background;
-    imageScene.background = themes.neutral.light.background;
-  }, [inputScene, imageScene]);
 
   useFrame((state) => {
     const { gl } = state;
@@ -369,9 +363,6 @@ function ChatInput(props: {
           <Image
             ref={imageElem}
             src='DAUGHTER_STEREO-MIND-GAMES.jpeg'
-            height='100%'
-            minHeight={48}
-            objectFit='cover'
             borderRadius={40}
             sm={{
               borderRadius: 40 * SM_FACTOR,
@@ -389,6 +380,8 @@ function ChatInput(props: {
           key={WrapMaterial.key}
           ref={inputShaderMaterial}
           uTexture={props.inputBuffer.texture}
+          transparent={true}
+          premultipliedAlpha={true}
         />
       </InputShaderTunnel.In>
 
