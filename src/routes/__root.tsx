@@ -68,7 +68,7 @@ function Root() {
       </header>
 
       <Canvas
-        gl={{ localClippingEnabled: true }}
+        gl={{ localClippingEnabled: true, alpha: true }}
         className='!fixed !inset-0'
         events={noEvents}
       >

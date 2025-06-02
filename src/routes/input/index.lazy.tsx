@@ -23,7 +23,6 @@ import { Button } from '@/common/canvas/button';
 import { Fullscreen } from '@/common/canvas/fullscreen';
 import { colors } from '@/common/canvas/theme';
 import { Github, Reference } from '@/common/dom/reference';
-import { themes } from '@/common/themes';
 import { Canvas, Footer, Header } from '@/global/tunnels';
 import { WrapMaterial } from '@/shaders/wrap';
 import { useFBO } from '@/utils/use-fbo';
@@ -91,11 +90,6 @@ function Prompt() {
     if (!imageMesh) return null;
     return forwardObjectEvents(imageMesh, () => imageCamera, imageScene);
   }, [imageMesh, imageCamera, imageScene]);
-
-  useEffect(() => {
-    inputScene.background = themes.neutral.light.background;
-    imageScene.background = themes.neutral.light.background;
-  }, [inputScene, imageScene]);
 
   useFrame((state) => {
     const { gl } = state;
@@ -389,6 +383,8 @@ function ChatInput(props: {
           key={WrapMaterial.key}
           ref={inputShaderMaterial}
           uTexture={props.inputBuffer.texture}
+          transparent={true}
+          premultipliedAlpha={true}
         />
       </InputShaderTunnel.In>
 
