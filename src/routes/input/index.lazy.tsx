@@ -13,10 +13,11 @@ import {
 } from 'react';
 import { forwardObjectEvents } from '@pmndrs/pointer-events';
 import { computed, signal } from '@preact/signals-core';
-import { CameraControls, PerspectiveCamera } from '@react-three/drei';
+import { CameraControls } from '@react-three/drei';
 import { createPortal, useFrame } from '@react-three/fiber';
 import { Container, Root, useRootSize } from '@react-three/uikit';
 import { Diamond, MoveUp, RotateCcw } from '@react-three/uikit-lucide';
+import { IfInSessionMode } from '@react-three/xr';
 import { createLazyFileRoute } from '@tanstack/react-router';
 
 import { Button } from '@/common/canvas/button';
@@ -25,7 +26,7 @@ import { colors } from '@/common/canvas/theme';
 import { Github, Reference } from '@/common/dom/reference';
 import { Canvas, Footer, Header } from '@/global/tunnels';
 import { WrapMaterial } from '@/shaders/wrap';
-import { useFBO } from '@/utils/use-fbo';
+import { useFBO, useFBOInXRFrame } from '@/utils/use-fbo';
 import { useSpringSignal } from '@/utils/use-spring-signal';
 
 import { Image } from './-components/image';
@@ -49,10 +50,9 @@ export const Route = createLazyFileRoute('/input/')({
       </Header.In>
 
       <Canvas.In>
-        <CameraControls />
-
-        {/* Reset camera controls */}
-        <PerspectiveCamera makeDefault position={[0, 0, 8]} />
+        <IfInSessionMode deny={['immersive-ar', 'immersive-vr']}>
+          <CameraControls />
+        </IfInSessionMode>
 
         <Prompt />
       </Canvas.In>
@@ -91,36 +91,33 @@ function Prompt() {
     return forwardObjectEvents(imageMesh, () => imageCamera, imageScene);
   }, [imageMesh, imageCamera, imageScene]);
 
-  useFrame((state) => {
-    const { gl } = state;
+  useFBOInXRFrame({
+    target: inputBuffer,
+    camera: inputCamera,
+    scene: inputScene,
+    onBeforeRender: () => {
+      if (forwardInputEvt) {
+        forwardInputEvt.update();
+      }
+    },
+  });
 
-    gl.setRenderTarget(inputBuffer);
-
-    gl.clear();
-
-    if (forwardInputEvt) {
-      forwardInputEvt.update();
-    }
-
-    gl.render(inputScene, inputCamera);
-
-    gl.setRenderTarget(imageBuffer);
-
-    gl.clear();
-
-    if (forwardImageEvt) {
-      forwardImageEvt.update();
-    }
-
-    gl.render(imageScene, imageCamera);
-
-    // Revert to the default render target
-    gl.setRenderTarget(null);
+  useFBOInXRFrame({
+    target: imageBuffer,
+    camera: imageCamera,
+    scene: imageScene,
+    onBeforeRender: () => {
+      if (forwardImageEvt) {
+        forwardImageEvt.update();
+      }
+    },
   });
 
   return (
     <>
-      <ResetTunnel.Out />
+      <group position={[0, 0, 0.01]}>
+        <ResetTunnel.Out />
+      </group>
 
       {createPortal(
         <Fullscreen
@@ -136,7 +133,7 @@ function Prompt() {
       )}
 
       {/* position the mesh behind the reset button */}
-      <Mesh ref={setInputMesh} position={[0, 0, -0.1]}>
+      <Mesh ref={setInputMesh}>
         <InputShaderTunnel.Out />
       </Mesh>
 
@@ -155,11 +152,7 @@ function Prompt() {
       )}
 
       {/* position the mesh behind the reset button */}
-      <Mesh
-        ref={setImageMesh}
-        rotation={[0, Math.PI, 0]}
-        position={[0, 0, -0.1]}
-      >
+      <Mesh ref={setImageMesh} rotation={[0, Math.PI, 0]}>
         <ImageShaderTunnel.Out />
       </Mesh>
     </>
@@ -178,7 +171,7 @@ function ChatInput(props: {
 
   const rootSize = useRootSize();
 
-  const inputSignal = useMemo(() => signal(''), []);
+  const inputSignal = useMemo(() => signal('test'), []);
   const isRecording = useMemo(() => signal(false), []);
 
   const [recRotationZ, recRotationZSpring] = useSpringSignal(0);
@@ -272,7 +265,7 @@ function ChatInput(props: {
 
   const resetBottom = computed(() => {
     if (!rootSize.value) return 0;
-    return -(rootSize.value[1] / 4) + 64;
+    return -32;
   });
 
   const resetPointerEvents = computed(() => {
@@ -327,19 +320,21 @@ function ChatInput(props: {
     <>
       <ResetTunnel.In>
         <Root
-          width={32}
-          height={32}
+          width={8}
+          height={8}
           justifyContent='center'
           alignItems='center'
           positionBottom={resetBottom}
         >
           <Button
-            variant='ghost'
+            variant='outline'
             flexShrink={0}
             padding={0}
-            width={32}
-            height={32}
+            width='100%'
+            height='100%'
             borderRadius={99}
+            borderWidth={0.25}
+            borderOpacity={resetOpacity}
             backgroundOpacity={resetOpacity}
             pointerEvents={resetPointerEvents}
             onClick={() => {
@@ -350,8 +345,8 @@ function ChatInput(props: {
           >
             <RotateCcw
               flexShrink={0}
-              width={16}
-              height={16}
+              width={4}
+              height={4}
               opacity={resetOpacity}
             />
           </Button>

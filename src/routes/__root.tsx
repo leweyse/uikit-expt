@@ -1,7 +1,13 @@
 import { useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { FontFamilyProvider } from '@react-three/uikit';
-import { noEvents, PointerEvents } from '@react-three/xr';
+import {
+  IfInSessionMode,
+  noEvents,
+  PointerEvents,
+  XR,
+  XROrigin,
+} from '@react-three/xr';
 import {
   createRootRoute,
   Link,
@@ -11,6 +17,7 @@ import {
 } from '@tanstack/react-router';
 
 import { Canvas as CanvasTunnel, Footer, Header } from '@/global/tunnels';
+import { xrStore } from '@/global/xr';
 
 export const Route = createRootRoute({
   component: Root,
@@ -70,6 +77,7 @@ function Root() {
       <Canvas
         gl={{ localClippingEnabled: true, alpha: true }}
         className='!fixed !inset-0'
+        camera={{ position: [0, 0, 1.25] }}
         events={noEvents}
       >
         <PointerEvents />
@@ -78,11 +86,24 @@ function Root() {
           satoshi={{ normal: '/satoshi/satoshi-uikit.json' }}
           heming={{ normal: '/heming/heming-uikit.json' }}
         >
-          <CanvasTunnel.Out />
+          <XR store={xrStore}>
+            <IfInSessionMode allow={['immersive-ar', 'immersive-vr']}>
+              <XROrigin position={[0, -1, 1.25]} />
+            </IfInSessionMode>
+
+            <CanvasTunnel.Out />
+          </XR>
         </FontFamilyProvider>
       </Canvas>
 
       <main className='flex-1 relative z-20'>
+        <button
+          className='pointer-events-auto'
+          onClick={() => xrStore.enterAR()}
+        >
+          AR
+        </button>
+
         <Outlet />
       </main>
 

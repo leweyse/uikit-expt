@@ -80,10 +80,12 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
     <Container
       cursor='pointer'
       flexDirection='row'
-      alignItems='center'
-      width='100%'
-      padding={24}
+      alignItems='flex-start'
       gap={20}
+      width='100%'
+      padding={32}
+      borderRadius={20}
+      backgroundColor={themes.neutral.light.background}
       {...props}
       onPointerOver={() => {
         edgeColorSpring.start(themes.violet.light.primary);
@@ -129,10 +131,10 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
           <Corner positionBottom={-1} positionLeft={-1} transformRotateZ={90} />
 
           <DefaultProperties
+            depthWrite
             depthAlign='middle'
             positionType='absolute'
             inset={0}
-            depthWrite
             padding={padding}
             transformRotateX={transformRotateWOffset}
             transformRotateY={transformRotateWOffset}

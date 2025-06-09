@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 
 import tailwindcss from '@tailwindcss/vite';
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react-swc';
 import { dirname, resolve } from 'pathe';
 import { defineConfig } from 'vite';
@@ -17,6 +18,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    basicSsl(),
     react(),
     tailwindcss(),
     glsl(),

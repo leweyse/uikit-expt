@@ -45,7 +45,9 @@ vec3 hsl2rgb(float h, float s, float l) {
 }
 
 float edgeFactor(vec2 p){
-  vec2 grid = abs(fract(p - 0.5) - 0.5) / fwidth(p) / 1.5;
+  float strength = 1.;
+
+  vec2 grid = abs(fract(p - 0.5) - 0.5) / fwidth(p) / strength;
   return min(grid.x, grid.y);
 }
 

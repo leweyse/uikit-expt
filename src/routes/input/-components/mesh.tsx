@@ -6,20 +6,15 @@ type Props = Omit<ThreeElements['mesh'], 'scale'>;
 
 export const Mesh = ({ ref, children, ...props }: Props) => {
   const size = useThree((state) => state.size);
-  const viewport = useThree((state) => state.viewport);
-
-  const width = size.width * viewport.dpr;
-  const height = size.height * viewport.dpr;
-  const ratio = width > height ? width / height : height / width;
 
   return (
-    <mesh ref={ref} {...props} scale={7 / ratio}>
+    <mesh ref={ref} {...props}>
       <planeGeometry
         args={[
-          width > height ? width / height : 1,
-          width > height ? 1 : height / width,
-          96,
-          96,
+          size.width > size.height ? size.width / size.height : 1,
+          size.width > size.height ? 1 : size.height / size.width,
+          120,
+          120,
         ]}
       />
 

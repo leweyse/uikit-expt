@@ -1,8 +1,10 @@
 import { animated } from '@react-spring/three';
-import { CameraControls, OrthographicCamera } from '@react-three/drei';
+import { CameraControls } from '@react-three/drei';
 import { Content, Root, Text } from '@react-three/uikit';
+import { IfInSessionMode } from '@react-three/xr';
 import { createLazyFileRoute } from '@tanstack/react-router';
 
+import { OrthographicCamera } from '@/common/canvas/custom-camera';
 import { Github, Reference } from '@/common/dom/reference';
 import { Canvas, Footer, Header } from '@/global/tunnels';
 
@@ -22,9 +24,10 @@ export const Route = createLazyFileRoute('/card/')({
       </Header.In>
 
       <Canvas.In>
-        <CameraControls />
-
-        <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={100} />
+        <IfInSessionMode deny={['immersive-ar', 'immersive-vr']}>
+          <CameraControls />
+          <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={500} />
+        </IfInSessionMode>
 
         <Cards />
       </Canvas.In>
@@ -58,8 +61,14 @@ const InteractiveCubes = () => {
 
 function Cards() {
   return (
-    <Root display='flex' flexDirection='column' width={450} gap={6}>
-      <Card alignItems='flex-start'>
+    <Root
+      display='flex'
+      flexDirection='column'
+      gap={12}
+      width={450}
+      transformScale={0.45}
+    >
+      <Card>
         <CardLabel>
           <Text>UIKIT</Text>
         </CardLabel>
@@ -77,7 +86,7 @@ function Cards() {
         </Content>
       </Card>
 
-      <Card alignItems='flex-start'>
+      <Card>
         <CardLabel>
           <Text>R3F</Text>
         </CardLabel>
