@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@juggle/resize-observer": "^3.4.0",
     "@pmndrs/handle": "^6.6.17",
     "@pmndrs/pointer-events": "^6.6.16",
     "@pmndrs/xr": "^6.6.17",
@@ -25,7 +24,6 @@
     "@tanstack/react-query": "^5.80.6",
     "@tanstack/react-router": "^1.120.20",
     "lucide-react": "^0.511.0",
-    "postprocessing": "^6.37.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "three": "^0.175.0",
