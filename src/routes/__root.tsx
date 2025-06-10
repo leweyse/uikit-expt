@@ -39,7 +39,7 @@ export const Route = createRootRouteWithContext<{
   component: Root,
 });
 
-const NavigationButtonsDom = () => {
+const NavigationButtons = () => {
   const router = useRouter();
   const { pathname } = useLocation();
 
@@ -216,7 +216,7 @@ function Root() {
       </main>
 
       <footer className='p-6 relative flex justify-between gap-2 z-20'>
-        <NavigationButtonsDom />
+        <NavigationButtons />
 
         <Footer.Out />
       </footer>
