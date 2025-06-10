@@ -81,10 +81,10 @@ const NavigationButtonsDom = () => {
               multitouch={false}
               rotate={{ x: false }}
             >
-              <UikitRoot gap={2} depthTest={false}>
+              <UikitRoot gap={1} depthTest={false}>
                 <Button
-                  height={6}
-                  paddingX={4}
+                  height={5}
+                  paddingX={2}
                   paddingY={2}
                   backgroundColor={themes.neutral.light.background}
                   disabled={currentRoute === 0 || !routes[currentRoute - 1]}
@@ -92,14 +92,14 @@ const NavigationButtonsDom = () => {
                     router.navigate({ to: routes[currentRoute - 1] });
                   }}
                 >
-                  <Text color={themes.neutral.light.foreground} fontSize={4}>
+                  <Text color={themes.neutral.light.foreground} fontSize={3.5}>
                     prev
                   </Text>
                 </Button>
 
                 <Button
-                  height={6}
-                  paddingX={4}
+                  height={5}
+                  paddingX={2}
                   paddingY={2}
                   backgroundColor={themes.neutral.light.background}
                   disabled={
@@ -110,7 +110,7 @@ const NavigationButtonsDom = () => {
                     router.navigate({ to: routes[currentRoute + 1] });
                   }}
                 >
-                  <Text color={themes.neutral.light.foreground} fontSize={4}>
+                  <Text color={themes.neutral.light.foreground} fontSize={3.5}>
                     next
                   </Text>
                 </Button>
