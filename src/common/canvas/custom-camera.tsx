@@ -6,7 +6,10 @@ import * as THREE from 'three';
 // XR guards don't prevent issues with the camera state from R3F.
 // Making the camera default (perspective or orthographic) does not implement
 // a proper cleanup for the case where the user switches to a different camera
-// from the "old one" (in this case, the default).
+// from the "old one".
+//
+// Problem: `default-camera` > orthographic > `default-camera` (after orthographic is unmounted).
+// What we need: `default-camera` > orthographic > `xr-camera`
 //
 // So, this is a workaround to keep the "card" demo keep working, as well as
 // allow update the router state (navigation) during an XR session.
