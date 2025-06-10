@@ -3,20 +3,21 @@ import type * as THREE from 'three';
 
 import type { CustomShaderRef } from '@/types';
 
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { forwardObjectEvents } from '@pmndrs/pointer-events';
 import { computed, signal } from '@preact/signals-core';
-import { CameraControls, PerspectiveCamera } from '@react-three/drei';
+import { CameraControls } from '@react-three/drei';
 import { createPortal, useFrame } from '@react-three/fiber';
-import { Container, Root, useRootSize } from '@react-three/uikit';
-import { Diamond, MoveUp, RotateCcw } from '@react-three/uikit-lucide';
+import { Handle, HandleTarget } from '@react-three/handle';
+import { Container, DefaultProperties, Root } from '@react-three/uikit';
+import {
+  Diamond,
+  LoaderCircle,
+  MoveUp,
+  RotateCcw,
+} from '@react-three/uikit-lucide';
+import { IfInSessionMode } from '@react-three/xr';
+import { useMutation } from '@tanstack/react-query';
 import { createLazyFileRoute } from '@tanstack/react-router';
 
 import { Button } from '@/common/canvas/button';
@@ -25,7 +26,7 @@ import { colors } from '@/common/canvas/theme';
 import { Github, Reference } from '@/common/dom/reference';
 import { Canvas, Footer, Header } from '@/global/tunnels';
 import { WrapMaterial } from '@/shaders/wrap';
-import { useFBO } from '@/utils/use-fbo';
+import { useFBO, useFBOInXRFrame } from '@/utils/use-fbo';
 import { useSpringSignal } from '@/utils/use-spring-signal';
 
 import { Image } from './-components/image';
@@ -49,10 +50,9 @@ export const Route = createLazyFileRoute('/input/')({
       </Header.In>
 
       <Canvas.In>
-        <CameraControls />
-
-        {/* Reset camera controls */}
-        <PerspectiveCamera makeDefault position={[0, 0, 8]} />
+        <IfInSessionMode deny={['immersive-ar', 'immersive-vr']}>
+          <CameraControls />
+        </IfInSessionMode>
 
         <Prompt />
       </Canvas.In>
@@ -91,36 +91,35 @@ function Prompt() {
     return forwardObjectEvents(imageMesh, () => imageCamera, imageScene);
   }, [imageMesh, imageCamera, imageScene]);
 
-  useFrame((state) => {
-    const { gl } = state;
+  useFBOInXRFrame({
+    target: inputBuffer,
+    camera: inputCamera,
+    scene: inputScene,
+    onBeforeRender: () => {
+      if (forwardInputEvt) {
+        forwardInputEvt.update();
+      }
+    },
+  });
 
-    gl.setRenderTarget(inputBuffer);
-
-    gl.clear();
-
-    if (forwardInputEvt) {
-      forwardInputEvt.update();
-    }
-
-    gl.render(inputScene, inputCamera);
-
-    gl.setRenderTarget(imageBuffer);
-
-    gl.clear();
-
-    if (forwardImageEvt) {
-      forwardImageEvt.update();
-    }
-
-    gl.render(imageScene, imageCamera);
-
-    // Revert to the default render target
-    gl.setRenderTarget(null);
+  useFBOInXRFrame({
+    target: imageBuffer,
+    camera: imageCamera,
+    scene: imageScene,
+    onBeforeRender: () => {
+      if (forwardImageEvt) {
+        forwardImageEvt.update();
+      }
+    },
   });
 
   return (
     <>
-      <ResetTunnel.Out />
+      <IfInSessionMode deny={['immersive-ar', 'immersive-vr']}>
+        <group position={[0, 0, 0.01]}>
+          <ResetTunnel.Out />
+        </group>
+      </IfInSessionMode>
 
       {createPortal(
         <Fullscreen
@@ -134,11 +133,6 @@ function Prompt() {
         </Fullscreen>,
         inputScene as unknown as THREE.Object3D,
       )}
-
-      {/* position the mesh behind the reset button */}
-      <Mesh ref={setInputMesh} position={[0, 0, -0.1]}>
-        <InputShaderTunnel.Out />
-      </Mesh>
 
       {createPortal(
         <Fullscreen
@@ -154,17 +148,52 @@ function Prompt() {
         imageScene as unknown as THREE.Object3D,
       )}
 
-      {/* position the mesh behind the reset button */}
-      <Mesh
-        ref={setImageMesh}
-        rotation={[0, Math.PI, 0]}
-        position={[0, 0, -0.1]}
-      >
-        <ImageShaderTunnel.Out />
-      </Mesh>
+      <IfInSessionMode allow={['immersive-vr', 'immersive-ar']}>
+        <HandleTarget>
+          <Handle
+            targetRef='from-context'
+            scale={false}
+            multitouch={false}
+            rotate={{ x: false }}
+          >
+            <group position={[0, 0, 0.01]}>
+              <ResetTunnel.Out />
+            </group>
+          </Handle>
+        </HandleTarget>
+
+        <Handle
+          targetRef='from-context'
+          scale={false}
+          multitouch={false}
+          rotate={{ x: false }}
+        >
+          <Mesh ref={setInputMesh}>
+            <InputShaderTunnel.Out />
+          </Mesh>
+        </Handle>
+
+        <Mesh ref={setImageMesh} rotation={[0, Math.PI, 0]}>
+          <ImageShaderTunnel.Out />
+        </Mesh>
+      </IfInSessionMode>
+
+      <IfInSessionMode deny={['immersive-ar', 'immersive-vr']}>
+        <Mesh ref={setInputMesh}>
+          <InputShaderTunnel.Out />
+        </Mesh>
+
+        <Mesh ref={setImageMesh} rotation={[0, Math.PI, 0]}>
+          <ImageShaderTunnel.Out />
+        </Mesh>
+      </IfInSessionMode>
     </>
   );
 }
+
+const delay = (ms: number) => {
+  return new Promise((res) => setTimeout(res, ms));
+};
 
 function ChatInput(props: {
   inputBuffer: THREE.WebGLRenderTarget;
@@ -176,11 +205,10 @@ function ChatInput(props: {
     useRef<CustomShaderRef<typeof WrapMaterial>>(null);
   const imageElem = useRef<ComponentRef<typeof Image>>(null);
 
-  const rootSize = useRootSize();
-
-  const inputSignal = useMemo(() => signal(''), []);
+  const inputSignal = useMemo(() => signal('Stereo Mind Game album cover'), []);
   const isRecording = useMemo(() => signal(false), []);
 
+  const [loaderRotationZ, loaderRotationZSpring] = useSpringSignal(0);
   const [recRotationZ, recRotationZSpring] = useSpringSignal(0);
   const [resetOpacity, resetOpacitySpring] = useSpringSignal(0);
 
@@ -233,6 +261,33 @@ function ChatInput(props: {
     },
   });
 
+  const mutation = useMutation({
+    mutationKey: ['get-image-url'],
+    mutationFn: async (prompt: string) => {
+      console.info(`Fetching image for prompt: ${prompt}`);
+
+      // You can use any API you want here
+      await delay(2000);
+
+      return {
+        src: '/DAUGHTER_STEREO-MIND-GAMES.jpeg',
+        aspectRatio: 1,
+      };
+    },
+    onMutate: () => {
+      loaderRotationZSpring.start(-360, {
+        loop: true,
+        config: { duration: 1000 },
+      });
+    },
+    onSuccess: () => {
+      shaderLeftSideProgress.start(1);
+    },
+    onSettled: () => {
+      loaderRotationZSpring.start(0);
+    },
+  });
+
   const recButtonBg = computed(() => {
     if (isRecording.value) {
       return colors.primary.value;
@@ -270,11 +325,6 @@ function ChatInput(props: {
     return 'auto';
   });
 
-  const resetBottom = computed(() => {
-    if (!rootSize.value) return 0;
-    return -(rootSize.value[1] / 4) + 64;
-  });
-
   const resetPointerEvents = computed(() => {
     if (resetOpacity.value === 1) return 'auto';
     return 'none';
@@ -282,13 +332,11 @@ function ChatInput(props: {
 
   const submit = () => {
     if (inputSignal.value.length > 0) {
-      shaderLeftSideProgress.start(1);
+      mutation.mutate(inputSignal.value);
     }
   };
 
   const reset = useCallback(() => {
-    inputSignal.value = '';
-
     recRotationZSpring.start(0);
 
     if (imageElem.current) {
@@ -300,7 +348,6 @@ function ChatInput(props: {
 
     resetOpacitySpring.start(0);
   }, [
-    inputSignal,
     recRotationZSpring,
     shaderLeftSideProgress,
     shaderRightSideProgress,
@@ -327,19 +374,21 @@ function ChatInput(props: {
     <>
       <ResetTunnel.In>
         <Root
-          width={32}
-          height={32}
+          width={8}
+          height={8}
           justifyContent='center'
           alignItems='center'
-          positionBottom={resetBottom}
+          positionBottom={-32}
         >
           <Button
-            variant='ghost'
+            variant='outline'
             flexShrink={0}
             padding={0}
-            width={32}
-            height={32}
+            width='100%'
+            height='100%'
             borderRadius={99}
+            borderWidth={0.25}
+            borderOpacity={resetOpacity}
             backgroundOpacity={resetOpacity}
             pointerEvents={resetPointerEvents}
             onClick={() => {
@@ -350,8 +399,8 @@ function ChatInput(props: {
           >
             <RotateCcw
               flexShrink={0}
-              width={16}
-              height={16}
+              width={4}
+              height={4}
               opacity={resetOpacity}
             />
           </Button>
@@ -359,10 +408,11 @@ function ChatInput(props: {
       </ResetTunnel.In>
 
       <ImageTunnel.In>
-        <Suspense fallback={null}>
+        {mutation.data ? (
           <Image
             ref={imageElem}
-            src='DAUGHTER_STEREO-MIND-GAMES.jpeg'
+            src={mutation.data.src}
+            srcAspectRatio={mutation.data.aspectRatio}
             borderRadius={40}
             sm={{
               borderRadius: 40 * SM_FACTOR,
@@ -372,7 +422,7 @@ function ChatInput(props: {
               minHeight: 40 * MD_FACTOR,
             }}
           />
-        </Suspense>
+        ) : null}
       </ImageTunnel.In>
 
       <InputShaderTunnel.In>
@@ -509,6 +559,9 @@ function ChatInput(props: {
           borderWidth={1}
           borderColor={colors.secondaryForeground}
           borderRadius={99}
+          disabled={mutation.isPending}
+          borderOpacity={undefined}
+          backgroundOpacity={undefined}
           sm={{ width: 28 * SM_FACTOR, borderRadius: 99 * SM_FACTOR }}
           md={{
             width: 28 * MD_FACTOR,
@@ -519,17 +572,24 @@ function ChatInput(props: {
           }}
           onClick={submit}
         >
-          <MoveUp
+          <DefaultProperties
             flexShrink={0}
             width={14}
             height={14}
             color={sendIconColor}
+            opacity={1}
             sm={{ width: 12 * SM_FACTOR, height: 12 * SM_FACTOR }}
             md={{
               width: 12 * MD_FACTOR,
               height: 12 * MD_FACTOR,
             }}
-          />
+          >
+            {mutation.isPending ? (
+              <LoaderCircle transformRotateZ={loaderRotationZ} />
+            ) : (
+              <MoveUp />
+            )}
+          </DefaultProperties>
         </Button>
       </Container>
     </>

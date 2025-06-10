@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import type { ThreeElements } from '@react-three/fiber';
+
+import { useMemo, useState } from 'react';
 import { forwardObjectEvents } from '@pmndrs/pointer-events';
 import { CameraControls } from '@react-three/drei';
-import {
-  createPortal,
-  type ThreeElements,
-  useFrame,
-  useThree,
-} from '@react-three/fiber';
+import { createPortal, useThree } from '@react-three/fiber';
+import { Handle } from '@react-three/handle';
 import { Container, Text } from '@react-three/uikit';
 import { MoveRight } from '@react-three/uikit-lucide';
+import { IfInSessionMode } from '@react-three/xr';
 import { createLazyFileRoute } from '@tanstack/react-router';
 import * as THREE from 'three';
 
@@ -18,7 +17,7 @@ import { Github } from '@/common/dom/reference';
 import { themes } from '@/common/themes';
 import { Canvas, Header } from '@/global/tunnels';
 import { BaseMaterial } from '@/shaders/base';
-import { useFBO } from '@/utils/use-fbo';
+import { useFBO, useFBOInXRFrame } from '@/utils/use-fbo';
 
 export const Route = createLazyFileRoute('/')({
   component: () => (
@@ -28,9 +27,24 @@ export const Route = createLazyFileRoute('/')({
       </Header.In>
 
       <Canvas.In>
-        <CameraControls />
+        <IfInSessionMode deny={['immersive-vr', 'immersive-ar']}>
+          <CameraControls />
+        </IfInSessionMode>
 
-        <Welcome />
+        <IfInSessionMode allow={['immersive-vr', 'immersive-ar']}>
+          <Handle
+            targetRef='from-context'
+            scale={false}
+            multitouch={false}
+            rotate={{ x: false }}
+          >
+            <Welcome />
+          </Handle>
+        </IfInSessionMode>
+
+        <IfInSessionMode deny={['immersive-ar', 'immersive-vr']}>
+          <Welcome />
+        </IfInSessionMode>
       </Canvas.In>
     </>
   ),
@@ -39,13 +53,8 @@ export const Route = createLazyFileRoute('/')({
 const Mesh = ({ children, ...props }: ThreeElements['mesh']) => {
   const size = useThree((state) => state.size);
 
-  const ratio =
-    size.width > size.height
-      ? size.width / size.height
-      : size.height / size.width;
-
   return (
-    <mesh {...props} scale={7 / ratio}>
+    <mesh {...props}>
       <planeGeometry
         args={[
           size.width > size.height ? size.width / size.height : 1,
@@ -72,24 +81,15 @@ function Welcome() {
     return forwardObjectEvents(mesh, () => camera, scene);
   }, [mesh, camera, scene]);
 
-  useEffect(() => {
-    scene.background = themes.neutral.light.background;
-  }, [scene]);
-
-  useFrame((state) => {
-    const { gl } = state;
-
-    gl.setRenderTarget(target);
-
-    gl.clear();
-
-    if (forwardEvt) {
-      forwardEvt.update();
-    }
-
-    gl.render(scene, camera);
-
-    gl.setRenderTarget(null);
+  useFBOInXRFrame({
+    target,
+    camera,
+    scene,
+    onBeforeRender: () => {
+      if (forwardEvt) {
+        forwardEvt.update();
+      }
+    },
   });
 
   return (
@@ -102,7 +102,14 @@ function Welcome() {
           alignItems='center'
           justifyContent='center'
         >
-          <Container flexDirection='column' alignItems='center' gap={24}>
+          <Container
+            flexDirection='column'
+            alignItems='center'
+            gap={16}
+            padding={72}
+            borderRadius={20}
+            backgroundColor={themes.neutral.light.background}
+          >
             <Text
               fontSize={60}
               fontWeight='light'
@@ -133,12 +140,12 @@ function Welcome() {
                 onClick={() => navigate({ to: '/card' })}
               >
                 <Text
-                  fontFamily='heming'
+                  fontFamily='satoshi'
                   fontSize={16}
                   sm={{ fontSize: 24 }}
                   md={{ fontSize: 36 }}
                 >
-                  Start
+                  visit
                 </Text>
                 <MoveRight
                   flexShrink={0}

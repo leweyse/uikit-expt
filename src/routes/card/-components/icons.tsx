@@ -15,7 +15,7 @@ export const Columns: FC<Props> = ({ edgeColor }) => {
       {columns.map((i) => (
         <mesh key={i} position={[i * 0.3, 0, 0]}>
           <boxGeometry args={[0.175, 1, 1]} />
-          <edgeMaterial key={EdgeMaterial.key} edgeColor={edgeColor} />
+          <edgeMaterial key={EdgeMaterial.key} uEdgeColor={edgeColor} />
         </mesh>
       ))}
     </group>
@@ -37,7 +37,7 @@ export const Cubes: FC<Props> = ({ edgeColor }) => {
       {Object.entries(cubes).map(([idx, pos]) => (
         <mesh key={idx} position={pos}>
           <boxGeometry args={[1, 1, 1]} />
-          <edgeMaterial key={EdgeMaterial.key} edgeColor={edgeColor} />
+          <edgeMaterial key={EdgeMaterial.key} uEdgeColor={edgeColor} />
         </mesh>
       ))}
     </group>
