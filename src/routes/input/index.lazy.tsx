@@ -202,7 +202,7 @@ function ChatInput(props: {
     useRef<CustomShaderRef<typeof WrapMaterial>>(null);
   const imageElem = useRef<ComponentRef<typeof Image>>(null);
 
-  const inputSignal = useMemo(() => signal('test'), []);
+  const inputSignal = useMemo(() => signal('Stereo Mind Game album cover'), []);
   const isRecording = useMemo(() => signal(false), []);
 
   const [recRotationZ, recRotationZSpring] = useSpringSignal(0);
@@ -306,8 +306,6 @@ function ChatInput(props: {
   };
 
   const reset = useCallback(() => {
-    inputSignal.value = '';
-
     recRotationZSpring.start(0);
 
     if (imageElem.current) {
@@ -319,7 +317,6 @@ function ChatInput(props: {
 
     resetOpacitySpring.start(0);
   }, [
-    inputSignal,
     recRotationZSpring,
     shaderLeftSideProgress,
     shaderRightSideProgress,
