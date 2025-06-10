@@ -8,7 +8,8 @@ import vert from './vert.glsl';
 
 export const EdgeMaterial = shaderMaterial(
   {
-    edgeColor: themes.neutral.light.foreground,
+    uStrength: 1,
+    uEdgeColor: themes.neutral.light.foreground,
   },
   vert,
   frag,

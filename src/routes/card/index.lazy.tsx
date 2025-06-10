@@ -1,5 +1,6 @@
 import { animated } from '@react-spring/three';
 import { CameraControls } from '@react-three/drei';
+import { Handle } from '@react-three/handle';
 import { Content, Root, Text } from '@react-three/uikit';
 import { IfInSessionMode } from '@react-three/xr';
 import { createLazyFileRoute } from '@tanstack/react-router';
@@ -29,7 +30,20 @@ export const Route = createLazyFileRoute('/card/')({
           <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={500} />
         </IfInSessionMode>
 
-        <Cards />
+        <IfInSessionMode allow={['immersive-vr', 'immersive-ar']}>
+          <Handle
+            targetRef='from-context'
+            scale={false}
+            multitouch={false}
+            rotate={{ x: false }}
+          >
+            <Cards />
+          </Handle>
+        </IfInSessionMode>
+
+        <IfInSessionMode deny={['immersive-ar', 'immersive-vr']}>
+          <Cards />
+        </IfInSessionMode>
       </Canvas.In>
 
       <Footer.In>
@@ -70,7 +84,7 @@ function Cards() {
     >
       <Card>
         <CardLabel>
-          <Text>UIKIT</Text>
+          <Text>UIKit</Text>
         </CardLabel>
 
         <CardDescription>

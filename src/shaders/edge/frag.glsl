@@ -1,6 +1,7 @@
-varying vec2 vUv;
+uniform vec3 uEdgeColor;
+uniform float uStrength;
 
-uniform vec3 edgeColor;
+varying vec2 vUv;
 
 float hue2rgb(float f1, float f2, float hue) {
     if (hue < 0.0)
@@ -44,17 +45,15 @@ vec3 hsl2rgb(float h, float s, float l) {
     return rgb;
 }
 
-float edgeFactor(vec2 p){
-  float strength = 1.;
-
+float edgeFactor(vec2 p, float strength) {
   vec2 grid = abs(fract(p - 0.5) - 0.5) / fwidth(p) / strength;
   return min(grid.x, grid.y);
 }
 
 void main() {
-  float a = edgeFactor(vUv);
+  float a = edgeFactor(vUv, uStrength);
 
-  vec3 c = mix(vec3(edgeColor), vec3(1), a);
+  vec3 c = mix(vec3(uEdgeColor), vec3(1), a);
 
   gl_FragColor = vec4(c, 1.0);
 }

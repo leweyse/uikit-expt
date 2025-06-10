@@ -1,6 +1,11 @@
 import { useMemo } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { FontFamilyProvider } from '@react-three/uikit';
+import { Canvas as R3FCanvas } from '@react-three/fiber';
+import { Handle, HandleTarget } from '@react-three/handle';
+import {
+  FontFamilyProvider,
+  Text,
+  Root as UikitRoot,
+} from '@react-three/uikit';
 import {
   IfInSessionMode,
   noEvents,
@@ -16,14 +21,17 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 
-import { Canvas as CanvasTunnel, Footer, Header } from '@/global/tunnels';
+import { Button } from '@/common/canvas/button';
+import { AR } from '@/common/dom/icons';
+import { themes } from '@/common/themes';
+import { Canvas, Footer, Header } from '@/global/tunnels';
 import { xrStore } from '@/global/xr';
 
 export const Route = createRootRoute({
   component: Root,
 });
 
-const NavigationButtons = () => {
+const NavigationButtonsDom = () => {
   const router = useRouter();
   const { pathname } = useLocation();
 
@@ -35,29 +43,79 @@ const NavigationButtons = () => {
   );
 
   return (
-    <div
-      className='flex gap-2 [&>button]:shrink-0 [&>button]:disabled:text-muted-foreground/80 [&>button]:text-foreground [&>button]:cursor-pointer [&>button]:hover:underline [&>button]:hover:underline-offset-2'
-      style={{
-        opacity: currentRoute <= 0 ? 0 : 1,
-        pointerEvents: currentRoute <= 0 ? 'none' : 'auto',
-      }}
-    >
-      <button
-        disabled={currentRoute === 0 || !routes[currentRoute - 1]}
-        onClick={() => router.navigate({ to: routes[currentRoute - 1] })}
+    <>
+      <div
+        className='flex gap-2 [&>button]:shrink-0 [&>button]:disabled:text-muted-foreground/80 [&>button]:text-foreground [&>button]:cursor-pointer [&>button]:hover:underline [&>button]:hover:underline-offset-2'
+        style={{
+          opacity: currentRoute <= 0 ? 0 : 1,
+          pointerEvents: currentRoute <= 0 ? 'none' : 'auto',
+        }}
       >
-        prev
-      </button>
+        <button
+          disabled={currentRoute === 0 || !routes[currentRoute - 1]}
+          onClick={() => router.navigate({ to: routes[currentRoute - 1] })}
+        >
+          prev
+        </button>
 
-      <button
-        disabled={
-          currentRoute === routes.length - 1 || !routes[currentRoute + 1]
-        }
-        onClick={() => router.navigate({ to: routes[currentRoute + 1] })}
-      >
-        next
-      </button>
-    </div>
+        <button
+          disabled={
+            currentRoute === routes.length - 1 || !routes[currentRoute + 1]
+          }
+          onClick={() => router.navigate({ to: routes[currentRoute + 1] })}
+        >
+          next
+        </button>
+      </div>
+
+      <Canvas.In>
+        <IfInSessionMode allow={['immersive-vr', 'immersive-ar']}>
+          <group position={[0, 0.6, 0.01]}>
+            <Handle
+              targetRef='from-context'
+              scale={false}
+              multitouch={false}
+              rotate={{ x: false }}
+            >
+              <UikitRoot gap={2} depthTest={false}>
+                <Button
+                  height={6}
+                  paddingX={4}
+                  paddingY={2}
+                  backgroundColor={themes.neutral.light.background}
+                  disabled={currentRoute === 0 || !routes[currentRoute - 1]}
+                  onClick={() => {
+                    router.navigate({ to: routes[currentRoute - 1] });
+                  }}
+                >
+                  <Text color={themes.neutral.light.foreground} fontSize={4}>
+                    prev
+                  </Text>
+                </Button>
+
+                <Button
+                  height={6}
+                  paddingX={4}
+                  paddingY={2}
+                  backgroundColor={themes.neutral.light.background}
+                  disabled={
+                    currentRoute === routes.length - 1 ||
+                    !routes[currentRoute + 1]
+                  }
+                  onClick={() => {
+                    router.navigate({ to: routes[currentRoute + 1] });
+                  }}
+                >
+                  <Text color={themes.neutral.light.foreground} fontSize={4}>
+                    next
+                  </Text>
+                </Button>
+              </UikitRoot>
+            </Handle>
+          </group>
+        </IfInSessionMode>
+      </Canvas.In>
+    </>
   );
 };
 
@@ -70,11 +128,20 @@ function Root() {
             leweyse
           </Link>
 
-          <Header.Out />
+          <div className='flex items-center gap-4 flex-col'>
+            <Header.Out />
+
+            <button
+              className='pointer-events-auto'
+              onClick={() => xrStore.enterAR()}
+            >
+              <AR className='w-6 h-6' />
+            </button>
+          </div>
         </nav>
       </header>
 
-      <Canvas
+      <R3FCanvas
         gl={{ localClippingEnabled: true, alpha: true }}
         className='!fixed !inset-0'
         camera={{ position: [0, 0, 1.25] }}
@@ -91,24 +158,19 @@ function Root() {
               <XROrigin position={[0, -1, 1.25]} />
             </IfInSessionMode>
 
-            <CanvasTunnel.Out />
+            <HandleTarget>
+              <Canvas.Out />
+            </HandleTarget>
           </XR>
         </FontFamilyProvider>
-      </Canvas>
+      </R3FCanvas>
 
       <main className='flex-1 relative z-20'>
-        <button
-          className='pointer-events-auto'
-          onClick={() => xrStore.enterAR()}
-        >
-          AR
-        </button>
-
         <Outlet />
       </main>
 
       <footer className='p-6 relative flex justify-between gap-2 z-20'>
-        <NavigationButtons />
+        <NavigationButtonsDom />
 
         <Footer.Out />
       </footer>

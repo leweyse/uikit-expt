@@ -15,7 +15,8 @@ import { forwardObjectEvents } from '@pmndrs/pointer-events';
 import { computed, signal } from '@preact/signals-core';
 import { CameraControls } from '@react-three/drei';
 import { createPortal, useFrame } from '@react-three/fiber';
-import { Container, Root, useRootSize } from '@react-three/uikit';
+import { Handle, HandleTarget } from '@react-three/handle';
+import { Container, Root } from '@react-three/uikit';
 import { Diamond, MoveUp, RotateCcw } from '@react-three/uikit-lucide';
 import { IfInSessionMode } from '@react-three/xr';
 import { createLazyFileRoute } from '@tanstack/react-router';
@@ -115,9 +116,11 @@ function Prompt() {
 
   return (
     <>
-      <group position={[0, 0, 0.01]}>
-        <ResetTunnel.Out />
-      </group>
+      <IfInSessionMode deny={['immersive-ar', 'immersive-vr']}>
+        <group position={[0, 0, 0.01]}>
+          <ResetTunnel.Out />
+        </group>
+      </IfInSessionMode>
 
       {createPortal(
         <Fullscreen
@@ -131,11 +134,6 @@ function Prompt() {
         </Fullscreen>,
         inputScene as unknown as THREE.Object3D,
       )}
-
-      {/* position the mesh behind the reset button */}
-      <Mesh ref={setInputMesh}>
-        <InputShaderTunnel.Out />
-      </Mesh>
 
       {createPortal(
         <Fullscreen
@@ -151,10 +149,45 @@ function Prompt() {
         imageScene as unknown as THREE.Object3D,
       )}
 
-      {/* position the mesh behind the reset button */}
-      <Mesh ref={setImageMesh} rotation={[0, Math.PI, 0]}>
-        <ImageShaderTunnel.Out />
-      </Mesh>
+      <IfInSessionMode allow={['immersive-vr', 'immersive-ar']}>
+        <HandleTarget>
+          <Handle
+            targetRef='from-context'
+            scale={false}
+            multitouch={false}
+            rotate={{ x: false }}
+          >
+            <group position={[0, 0, 0.01]}>
+              <ResetTunnel.Out />
+            </group>
+          </Handle>
+        </HandleTarget>
+
+        <Handle
+          targetRef='from-context'
+          scale={false}
+          multitouch={false}
+          rotate={{ x: false }}
+        >
+          <Mesh ref={setInputMesh}>
+            <InputShaderTunnel.Out />
+          </Mesh>
+        </Handle>
+
+        <Mesh ref={setImageMesh} rotation={[0, Math.PI, 0]}>
+          <ImageShaderTunnel.Out />
+        </Mesh>
+      </IfInSessionMode>
+
+      <IfInSessionMode deny={['immersive-ar', 'immersive-vr']}>
+        <Mesh ref={setInputMesh}>
+          <InputShaderTunnel.Out />
+        </Mesh>
+
+        <Mesh ref={setImageMesh} rotation={[0, Math.PI, 0]}>
+          <ImageShaderTunnel.Out />
+        </Mesh>
+      </IfInSessionMode>
     </>
   );
 }
@@ -168,8 +201,6 @@ function ChatInput(props: {
   const imageShaderMaterial =
     useRef<CustomShaderRef<typeof WrapMaterial>>(null);
   const imageElem = useRef<ComponentRef<typeof Image>>(null);
-
-  const rootSize = useRootSize();
 
   const inputSignal = useMemo(() => signal('test'), []);
   const isRecording = useMemo(() => signal(false), []);
@@ -263,11 +294,6 @@ function ChatInput(props: {
     return 'auto';
   });
 
-  const resetBottom = computed(() => {
-    if (!rootSize.value) return 0;
-    return -32;
-  });
-
   const resetPointerEvents = computed(() => {
     if (resetOpacity.value === 1) return 'auto';
     return 'none';
@@ -324,7 +350,7 @@ function ChatInput(props: {
           height={8}
           justifyContent='center'
           alignItems='center'
-          positionBottom={resetBottom}
+          positionBottom={-32}
         >
           <Button
             variant='outline'

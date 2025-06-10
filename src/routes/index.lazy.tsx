@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { forwardObjectEvents } from '@pmndrs/pointer-events';
 import { CameraControls } from '@react-three/drei';
 import { createPortal, useThree } from '@react-three/fiber';
+import { Handle } from '@react-three/handle';
 import { Container, Text } from '@react-three/uikit';
 import { MoveRight } from '@react-three/uikit-lucide';
 import { IfInSessionMode } from '@react-three/xr';
@@ -30,7 +31,20 @@ export const Route = createLazyFileRoute('/')({
           <CameraControls />
         </IfInSessionMode>
 
-        <Welcome />
+        <IfInSessionMode allow={['immersive-vr', 'immersive-ar']}>
+          <Handle
+            targetRef='from-context'
+            scale={false}
+            multitouch={false}
+            rotate={{ x: false }}
+          >
+            <Welcome />
+          </Handle>
+        </IfInSessionMode>
+
+        <IfInSessionMode deny={['immersive-ar', 'immersive-vr']}>
+          <Welcome />
+        </IfInSessionMode>
       </Canvas.In>
     </>
   ),

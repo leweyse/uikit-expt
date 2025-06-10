@@ -83,7 +83,7 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
       alignItems='flex-start'
       gap={20}
       width='100%'
-      padding={32}
+      padding={28}
       borderRadius={20}
       backgroundColor={themes.neutral.light.background}
       {...props}
