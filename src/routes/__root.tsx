@@ -13,6 +13,7 @@ import {
   noEvents,
   PointerEvents,
   XR,
+  XRDomOverlay,
   XROrigin,
 } from '@react-three/xr';
 import {
@@ -22,6 +23,7 @@ import {
   useLocation,
   useRouter,
 } from '@tanstack/react-router';
+import { X } from 'lucide-react';
 
 import { Button } from '@/common/canvas/button';
 import { AR } from '@/common/dom/icons';
@@ -161,6 +163,17 @@ function Root() {
             <IfInSessionMode allow={['immersive-ar', 'immersive-vr']}>
               <XROrigin position={[0, -1, 1.25]} />
             </IfInSessionMode>
+
+            <XRDomOverlay
+              style={{ width: '100%', height: '100%', position: 'relative' }}
+            >
+              <button
+                onClick={() => xrStore.getState().session?.end()}
+                className='absolute top-8 right-4 p-2 cursor-pointer rounded-md bg-accent/50 shadow-accent'
+              >
+                <X className='size-4 stroke-2 text-accent-foreground shadow-accent' />
+              </button>
+            </XRDomOverlay>
 
             <HandleTarget>
               <Canvas.Out />
