@@ -1,6 +1,7 @@
+import type { ComponentRef } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { Canvas as R3FCanvas } from '@react-three/fiber';
 import { Handle, HandleTarget } from '@react-three/handle';
 import {
@@ -24,6 +25,7 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import { X } from 'lucide-react';
+import { Euler, Vector3 } from 'three';
 
 import { Button } from '@/common/canvas/button';
 import { AR } from '@/common/dom/icons';
@@ -125,7 +127,12 @@ const NavigationButtonsDom = () => {
   );
 };
 
+const initialPosition = new Vector3();
+const initialRotation = new Euler();
+
 function Root() {
+  const handleTargetRef = useRef<ComponentRef<typeof HandleTarget>>(null);
+
   return (
     <>
       <header className='p-6 relative z-20 w-full'>
@@ -139,7 +146,16 @@ function Root() {
 
             <button
               className='pointer-events-auto'
-              onClick={() => xrStore.enterAR()}
+              onClick={() => {
+                const handleTarget = handleTargetRef.current;
+
+                if (handleTarget) {
+                  handleTarget.position.copy(initialPosition);
+                  handleTarget.rotation.copy(initialRotation);
+                }
+
+                xrStore.enterAR();
+              }}
             >
               <AR className='w-6 h-6' />
             </button>
@@ -168,14 +184,27 @@ function Root() {
               style={{ width: '100%', height: '100%', position: 'relative' }}
             >
               <button
-                onClick={() => xrStore.getState().session?.end()}
+                onClick={async () => {
+                  await xrStore.getState().session?.end();
+
+                  handleTargetRef.current?.position.set(
+                    initialPosition.x,
+                    initialPosition.y,
+                    initialPosition.z,
+                  );
+                  handleTargetRef.current?.rotation.set(
+                    initialRotation.x,
+                    initialRotation.y,
+                    initialRotation.z,
+                  );
+                }}
                 className='absolute top-8 right-4 p-2 cursor-pointer rounded-md bg-accent/50 shadow-accent'
               >
                 <X className='size-4 stroke-2 text-accent-foreground shadow-accent' />
               </button>
             </XRDomOverlay>
 
-            <HandleTarget>
+            <HandleTarget ref={handleTargetRef}>
               <Canvas.Out />
             </HandleTarget>
           </XR>
