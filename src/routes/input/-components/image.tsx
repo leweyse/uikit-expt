@@ -2,7 +2,6 @@ import type { ComponentPropsWithoutRef, RefObject } from 'react';
 import type { SpringValue } from '@react-spring/three';
 
 import { useImperativeHandle } from 'react';
-import { useTexture } from '@react-three/drei';
 import { Image as ImagePrimitive } from '@react-three/uikit';
 
 import { useSpringSignal } from '@/utils/use-spring-signal';
@@ -10,22 +9,22 @@ import { useSpringSignal } from '@/utils/use-spring-signal';
 export const Image = ({
   ref,
   src,
+  srcAspectRatio,
   ...props
-}: ComponentPropsWithoutRef<typeof ImagePrimitive> & {
+}: Omit<ComponentPropsWithoutRef<typeof ImagePrimitive>, 'aspectRatio'> & {
+  srcAspectRatio: number;
   ref?: RefObject<{
     adjustSize: () => void;
     reset: SpringValue<`${number}%`>['start'];
   } | null>;
 }) => {
-  const texture = useTexture(src as string);
-
   const [maxHeight, maxHeightSpring] = useSpringSignal('0%' as `${number}%`);
   const [aspectRatio, aspectRatioSpring] = useSpringSignal(10);
 
   useImperativeHandle(ref, () => ({
     adjustSize: () => {
       maxHeightSpring.start('100%');
-      aspectRatioSpring.start(texture.image.width / texture.image.height);
+      aspectRatioSpring.start(srcAspectRatio);
     },
     reset: () => {
       aspectRatioSpring.start(10, {

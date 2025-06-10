@@ -22,7 +22,8 @@
     "@react-three/uikit": "^0.8.19",
     "@react-three/uikit-lucide": "^0.8.19",
     "@react-three/xr": "^6.6.16",
-    "@tanstack/react-router": "^1.119.0",
+    "@tanstack/react-query": "^5.80.6",
+    "@tanstack/react-router": "^1.120.20",
     "lucide-react": "^0.511.0",
     "postprocessing": "^6.37.3",
     "react": "^19.1.0",
@@ -34,7 +35,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.0.0-beta.2",
     "@tailwindcss/vite": "^4.1.4",
-    "@tanstack/router-plugin": "^1.119.0",
+    "@tanstack/router-plugin": "^1.120.20",
     "@types/node": "^22.14.1",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",

@@ -1,3 +1,5 @@
+import type { QueryClient } from '@tanstack/react-query';
+
 import { useMemo } from 'react';
 import { Canvas as R3FCanvas } from '@react-three/fiber';
 import { Handle, HandleTarget } from '@react-three/handle';
@@ -14,7 +16,7 @@ import {
   XROrigin,
 } from '@react-three/xr';
 import {
-  createRootRoute,
+  createRootRouteWithContext,
   Link,
   Outlet,
   useLocation,
@@ -27,7 +29,9 @@ import { themes } from '@/common/themes';
 import { Canvas, Footer, Header } from '@/global/tunnels';
 import { xrStore } from '@/global/xr';
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+}>()({
   component: Root,
 });
 

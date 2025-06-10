@@ -3,22 +3,21 @@ import type * as THREE from 'three';
 
 import type { CustomShaderRef } from '@/types';
 
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { forwardObjectEvents } from '@pmndrs/pointer-events';
 import { computed, signal } from '@preact/signals-core';
 import { CameraControls } from '@react-three/drei';
 import { createPortal, useFrame } from '@react-three/fiber';
 import { Handle, HandleTarget } from '@react-three/handle';
-import { Container, Root } from '@react-three/uikit';
-import { Diamond, MoveUp, RotateCcw } from '@react-three/uikit-lucide';
+import { Container, DefaultProperties, Root } from '@react-three/uikit';
+import {
+  Diamond,
+  LoaderCircle,
+  MoveUp,
+  RotateCcw,
+} from '@react-three/uikit-lucide';
 import { IfInSessionMode } from '@react-three/xr';
+import { useMutation } from '@tanstack/react-query';
 import { createLazyFileRoute } from '@tanstack/react-router';
 
 import { Button } from '@/common/canvas/button';
@@ -192,6 +191,10 @@ function Prompt() {
   );
 }
 
+const delay = (ms: number) => {
+  return new Promise((res) => setTimeout(res, ms));
+};
+
 function ChatInput(props: {
   inputBuffer: THREE.WebGLRenderTarget;
   imageBuffer: THREE.WebGLRenderTarget;
@@ -205,6 +208,7 @@ function ChatInput(props: {
   const inputSignal = useMemo(() => signal('Stereo Mind Game album cover'), []);
   const isRecording = useMemo(() => signal(false), []);
 
+  const [loaderRotationZ, loaderRotationZSpring] = useSpringSignal(0);
   const [recRotationZ, recRotationZSpring] = useSpringSignal(0);
   const [resetOpacity, resetOpacitySpring] = useSpringSignal(0);
 
@@ -257,6 +261,33 @@ function ChatInput(props: {
     },
   });
 
+  const mutation = useMutation({
+    mutationKey: ['get-image-url'],
+    mutationFn: async (prompt: string) => {
+      console.info(`Fetching image for prompt: ${prompt}`);
+
+      // You can use any API you want here
+      await delay(2000);
+
+      return {
+        src: '/DAUGHTER_STEREO-MIND-GAMES.jpeg',
+        aspectRatio: 1,
+      };
+    },
+    onMutate: () => {
+      loaderRotationZSpring.start(-360, {
+        loop: true,
+        config: { duration: 1000 },
+      });
+    },
+    onSuccess: () => {
+      shaderLeftSideProgress.start(1);
+    },
+    onSettled: () => {
+      loaderRotationZSpring.start(0);
+    },
+  });
+
   const recButtonBg = computed(() => {
     if (isRecording.value) {
       return colors.primary.value;
@@ -301,7 +332,7 @@ function ChatInput(props: {
 
   const submit = () => {
     if (inputSignal.value.length > 0) {
-      shaderLeftSideProgress.start(1);
+      mutation.mutate(inputSignal.value);
     }
   };
 
@@ -377,10 +408,11 @@ function ChatInput(props: {
       </ResetTunnel.In>
 
       <ImageTunnel.In>
-        <Suspense fallback={null}>
+        {mutation.data ? (
           <Image
             ref={imageElem}
-            src='DAUGHTER_STEREO-MIND-GAMES.jpeg'
+            src={mutation.data.src}
+            srcAspectRatio={mutation.data.aspectRatio}
             borderRadius={40}
             sm={{
               borderRadius: 40 * SM_FACTOR,
@@ -390,7 +422,7 @@ function ChatInput(props: {
               minHeight: 40 * MD_FACTOR,
             }}
           />
-        </Suspense>
+        ) : null}
       </ImageTunnel.In>
 
       <InputShaderTunnel.In>
@@ -527,6 +559,9 @@ function ChatInput(props: {
           borderWidth={1}
           borderColor={colors.secondaryForeground}
           borderRadius={99}
+          disabled={mutation.isPending}
+          borderOpacity={undefined}
+          backgroundOpacity={undefined}
           sm={{ width: 28 * SM_FACTOR, borderRadius: 99 * SM_FACTOR }}
           md={{
             width: 28 * MD_FACTOR,
@@ -537,17 +572,24 @@ function ChatInput(props: {
           }}
           onClick={submit}
         >
-          <MoveUp
+          <DefaultProperties
             flexShrink={0}
             width={14}
             height={14}
             color={sendIconColor}
+            opacity={1}
             sm={{ width: 12 * SM_FACTOR, height: 12 * SM_FACTOR }}
             md={{
               width: 12 * MD_FACTOR,
               height: 12 * MD_FACTOR,
             }}
-          />
+          >
+            {mutation.isPending ? (
+              <LoaderCircle transformRotateZ={loaderRotationZ} />
+            ) : (
+              <MoveUp />
+            )}
+          </DefaultProperties>
         </Button>
       </Container>
     </>
