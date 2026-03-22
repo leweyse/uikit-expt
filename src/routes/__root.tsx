@@ -1,14 +1,9 @@
-import type { ComponentRef } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { Canvas as R3FCanvas } from '@react-three/fiber';
 import { Handle, HandleTarget } from '@react-three/handle';
-import {
-  FontFamilyProvider,
-  Text,
-  Root as UikitRoot,
-} from '@react-three/uikit';
+import { Container, Text } from '@react-three/uikit';
 import {
   IfInSessionMode,
   noEvents,
@@ -25,7 +20,6 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import { X } from 'lucide-react';
-import { Euler, Vector3 } from 'three';
 
 import { Button } from '@/common/canvas/button';
 import { AR } from '@/common/dom/icons';
@@ -46,7 +40,7 @@ const NavigationButtons = () => {
   const routes = useMemo(() => Object.keys(router.routesByPath), [router]);
 
   const currentRoute = useMemo(
-    () => routes.findIndex((route) => route === pathname),
+    () => routes.indexOf(pathname),
     [pathname, routes],
   );
 
@@ -85,7 +79,7 @@ const NavigationButtons = () => {
               multitouch={false}
               rotate={{ x: false }}
             >
-              <UikitRoot gap={1} depthTest={false}>
+              <Container gap={1} depthTest={false}>
                 <Button
                   height={6}
                   paddingX={4}
@@ -118,7 +112,7 @@ const NavigationButtons = () => {
                     next
                   </Text>
                 </Button>
-              </UikitRoot>
+              </Container>
             </Handle>
           </group>
         </IfInSessionMode>
@@ -127,12 +121,7 @@ const NavigationButtons = () => {
   );
 };
 
-const initialPosition = new Vector3();
-const initialRotation = new Euler();
-
 function Root() {
-  const handleTargetRef = useRef<ComponentRef<typeof HandleTarget>>(null);
-
   return (
     <>
       <header className='p-6 relative z-20 w-full'>
@@ -147,13 +136,6 @@ function Root() {
             <button
               className='pointer-events-auto'
               onClick={() => {
-                const handleTarget = handleTargetRef.current;
-
-                if (handleTarget) {
-                  handleTarget.position.copy(initialPosition);
-                  handleTarget.rotation.copy(initialRotation);
-                }
-
                 xrStore.enterAR();
               }}
             >
@@ -165,50 +147,34 @@ function Root() {
 
       <R3FCanvas
         gl={{ localClippingEnabled: true, alpha: true }}
-        className='!fixed !inset-0'
+        className='fixed! inset-0!'
         camera={{ position: [0, 0, 1.25] }}
         events={noEvents}
       >
         <PointerEvents />
 
-        <FontFamilyProvider
-          satoshi={{ normal: '/satoshi/satoshi-uikit.json' }}
-          heming={{ normal: '/heming/heming-uikit.json' }}
-        >
-          <XR store={xrStore}>
-            <IfInSessionMode allow={['immersive-ar', 'immersive-vr']}>
-              <XROrigin position={[0, -1, 1.25]} />
-            </IfInSessionMode>
+        <XR store={xrStore}>
+          <IfInSessionMode allow={['immersive-ar', 'immersive-vr']}>
+            <XROrigin position={[0, -1, 1.25]} />
+          </IfInSessionMode>
 
-            <XRDomOverlay
-              style={{ width: '100%', height: '100%', position: 'relative' }}
+          <XRDomOverlay
+            style={{ width: '100%', height: '100%', position: 'relative' }}
+          >
+            <button
+              onClick={async () => {
+                await xrStore.getState().session?.end();
+              }}
+              className='absolute top-8 right-4 p-2 cursor-pointer rounded-md bg-accent/50 shadow-accent'
             >
-              <button
-                onClick={async () => {
-                  await xrStore.getState().session?.end();
+              <X className='size-4 stroke-2 text-accent-foreground shadow-accent' />
+            </button>
+          </XRDomOverlay>
 
-                  handleTargetRef.current?.position.set(
-                    initialPosition.x,
-                    initialPosition.y,
-                    initialPosition.z,
-                  );
-                  handleTargetRef.current?.rotation.set(
-                    initialRotation.x,
-                    initialRotation.y,
-                    initialRotation.z,
-                  );
-                }}
-                className='absolute top-8 right-4 p-2 cursor-pointer rounded-md bg-accent/50 shadow-accent'
-              >
-                <X className='size-4 stroke-2 text-accent-foreground shadow-accent' />
-              </button>
-            </XRDomOverlay>
-
-            <HandleTarget ref={handleTargetRef}>
-              <Canvas.Out />
-            </HandleTarget>
-          </XR>
-        </FontFamilyProvider>
+          <HandleTarget>
+            <Canvas.Out />
+          </HandleTarget>
+        </XR>
       </R3FCanvas>
 
       <main className='flex-1 relative z-20'>

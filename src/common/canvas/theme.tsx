@@ -1,12 +1,11 @@
+import type { ReadonlySignal } from '@preact/signals-core';
 import type { Color } from 'three';
 
-import { computed, type ReadonlySignal, signal } from '@preact/signals-core';
-import {
-  DefaultProperties,
-  type DefaultPropertiesProperties,
-} from '@react-three/uikit';
+import type { Theme } from '@/common/themes';
 
-import { type Theme, themes } from '@/common/themes';
+import { computed, signal } from '@preact/signals-core';
+
+import { themes } from '@/common/themes';
 
 export const baseBorderRadius = signal(8);
 
@@ -24,18 +23,4 @@ export const colors = {} as {
 for (const anyKey in themes.neutral.light) {
   const key = anyKey as keyof (typeof themes)['neutral']['light'];
   colors[key] = computed<Color>(() => themes[themeName.value].light[key]);
-}
-
-export function Defaults(props: DefaultPropertiesProperties) {
-  return (
-    <DefaultProperties
-      scrollbarColor={colors.foreground}
-      scrollbarBorderRadius={4}
-      scrollbarOpacity={0.3}
-      lineHeight='150%'
-      borderColor={colors.border}
-      color={colors.foreground}
-      {...props}
-    />
-  );
 }

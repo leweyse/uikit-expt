@@ -1,139 +1,181 @@
-import { forwardRef, type ReactNode, type RefAttributes } from 'react';
-import {
-  type AllOptionalProperties,
-  Container,
-  type ContainerProperties,
-  type ContainerRef,
-  DefaultProperties,
+import type {
+  InProperties,
+  RenderContext,
+  UnionizeVariants,
+} from '@pmndrs/uikit';
+import type {
+  BaseOutProperties,
+  ContainerProperties,
 } from '@react-three/uikit';
+
+import type { PropsWithChildren } from '@/types';
+
+import { Container, componentDefaults } from '@pmndrs/uikit';
+import { computed } from '@preact/signals-core';
+import { build, withOpacity } from '@react-three/uikit';
 
 import { borderRadius, colors } from '@/common/canvas/theme';
 
-const buttonVariants = {
+type ButtonVariantProps = Pick<
+  ContainerProperties,
+  'hover' | 'backgroundColor' | 'color' | 'borderWidth' | 'borderColor'
+>;
+type ButtonSizeProps = Pick<
+  ContainerProperties,
+  'height' | 'width' | 'paddingX' | 'paddingY'
+>;
+
+const _buttonVariants = {
   default: {
-    containerHoverProps: {
-      backgroundOpacity: 0.9,
+    hover: {
+      backgroundColor: withOpacity(colors.primary, 0.9),
     },
-    containerProps: {
-      backgroundColor: colors.primary,
-    },
-    defaultProps: {
-      color: colors.primaryForeground,
-    },
+    backgroundColor: colors.primary,
+    color: colors.primaryForeground,
   },
   destructive: {
-    containerHoverProps: {
-      backgroundOpacity: 0.9,
+    hover: {
+      backgroundColor: withOpacity(colors.destructive, 0.9),
     },
-    containerProps: {
-      backgroundColor: colors.destructive,
-    },
-    defaultProps: {
-      color: colors.destructiveForeground,
-    },
+    backgroundColor: colors.destructive,
+    color: colors.destructiveForeground,
   },
   outline: {
-    containerHoverProps: {
+    hover: {
       backgroundColor: colors.accent,
+      color: colors.accentForeground,
     },
-    containerProps: {
-      borderWidth: 1,
-      borderColor: colors.input,
-      backgroundColor: colors.background,
-    },
+    borderWidth: 1,
+    borderColor: colors.input,
+    backgroundColor: colors.background,
   },
   secondary: {
-    containerHoverProps: {
-      backgroundOpacity: 0.8,
+    hover: {
+      backgroundColor: withOpacity(colors.secondary, 0.8),
     },
-    containerProps: {
-      backgroundColor: colors.secondary,
-    },
-    defaultProps: {
-      color: colors.secondaryForeground,
-    },
+    backgroundColor: colors.secondary,
+    color: colors.secondaryForeground,
   },
   ghost: {
-    containerHoverProps: {
+    hover: {
       backgroundColor: colors.accent,
+      color: colors.accentForeground,
     },
-    defaultProps: {},
   },
   link: {
-    containerProps: {},
-    defaultProps: {
-      color: colors.primary,
-    },
-  },
-};
+    color: colors.primary,
+  }, //TODO: underline-offset-4 hover:underline",
+} satisfies Record<string, ButtonVariantProps>;
+const buttonVariants = _buttonVariants as UnionizeVariants<
+  typeof _buttonVariants
+>;
 
-const buttonSizes = {
+const _buttonSizes = {
   default: { height: 40, paddingX: 16, paddingY: 8 },
   sm: { height: 36, paddingX: 12 },
   lg: { height: 42, paddingX: 32 },
   icon: { height: 40, width: 40 },
-} satisfies { [Key in string]: ContainerProperties };
+} satisfies Record<string, ButtonSizeProps>;
+const buttonSizes = _buttonSizes as UnionizeVariants<typeof _buttonSizes>;
 
-export type ButtonProperties = ContainerProperties & {
+export type ButtonOutProperties = BaseOutProperties & {
   variant?: keyof typeof buttonVariants;
   size?: keyof typeof buttonSizes;
   disabled?: boolean;
 };
 
-export const Button: (
-  props: ButtonProperties & RefAttributes<ContainerRef>,
-) => ReactNode = forwardRef(
-  (
-    {
-      children,
-      variant = 'default',
-      size = 'default',
-      disabled = false,
-      hover,
-      ...props
-    },
-    ref,
-  ) => {
-    const {
-      containerProps,
-      defaultProps,
-      containerHoverProps,
-    }: {
-      containerHoverProps?: ContainerProperties['hover'];
-      containerProps?: Omit<ContainerProperties, 'hover'>;
-      defaultProps?: AllOptionalProperties;
-    } = buttonVariants[variant];
-    const sizeProps = buttonSizes[size];
+type VanillaButtonProperties = InProperties<ButtonOutProperties>;
 
-    return (
-      <Container
-        borderRadius={borderRadius.md}
-        alignItems='center'
-        justifyContent='center'
-        {...containerProps}
-        {...sizeProps}
-        borderOpacity={disabled ? 0.5 : undefined}
-        backgroundOpacity={disabled ? 0.5 : undefined}
-        cursor={disabled ? undefined : 'pointer'}
-        flexDirection='row'
-        hover={{
-          ...containerHoverProps,
-          ...hover,
-        }}
-        ref={ref}
-        {...props}
-      >
-        <DefaultProperties
-          fontSize={14}
-          lineHeight={20}
-          fontWeight='medium'
-          wordBreak='keep-all'
-          {...defaultProps}
-          opacity={disabled ? 0.5 : undefined}
-        >
-          {children}
-        </DefaultProperties>
-      </Container>
-    );
-  },
+class ButtonClass extends Container<ButtonOutProperties> {
+  constructor(
+    inputProperties?: InProperties<ButtonOutProperties>,
+    initialClasses?: Array<InProperties<BaseOutProperties> | string>,
+    config?: {
+      renderContext?: RenderContext;
+      defaultOverrides?: InProperties<ButtonOutProperties>;
+    },
+  ) {
+    const borderW = computed(() => {
+      const variant = this.properties.value.variant ?? 'default';
+      return buttonVariants[variant]?.borderWidth;
+    });
+    const sizeProps = computed(() => {
+      const size = this.properties.value.size ?? 'default';
+      return buttonSizes[size];
+    });
+    const paddingX = computed(() => sizeProps.value?.paddingX);
+    const paddingY = computed(() => sizeProps.value?.paddingY);
+    super(inputProperties, initialClasses, {
+      defaults: componentDefaults,
+      ...config,
+      defaultOverrides: {
+        '*': {
+          borderColor: colors.border,
+        },
+        borderRadius: borderRadius.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+        fontSize: 14,
+        lineHeight: '20px',
+        fontWeight: 'medium',
+        wordBreak: 'keep-all',
+        hover: {
+          backgroundColor: computed(
+            () =>
+              buttonVariants[this.properties.value.variant ?? 'default'].hover
+                ?.backgroundColor?.value,
+          ),
+          color: computed(
+            () =>
+              buttonVariants[this.properties.value.variant ?? 'default'].hover
+                ?.color?.value,
+          ),
+        },
+        backgroundColor: computed(
+          () =>
+            buttonVariants[this.properties.value.variant ?? 'default']
+              .backgroundColor?.value,
+        ),
+        color: computed(
+          () =>
+            buttonVariants[this.properties.value.variant ?? 'default'].color
+              ?.value,
+        ),
+        borderTopWidth: borderW,
+        borderRightWidth: borderW,
+        borderBottomWidth: borderW,
+        borderLeftWidth: borderW,
+        borderColor: computed(
+          () =>
+            buttonVariants[this.properties.value.variant ?? 'default']
+              .borderColor?.value,
+        ),
+        // size-derived
+        height: computed(() => sizeProps.value?.height),
+        width: computed(() => sizeProps.value?.width),
+        paddingLeft: paddingX,
+        paddingRight: paddingX,
+        paddingTop: paddingY,
+        paddingBottom: paddingY,
+        // disabled-derived
+        opacity: computed(() =>
+          (this.properties.value.disabled ?? false) ? 0.5 : 1,
+        ),
+        cursor: computed(() =>
+          (this.properties.value.disabled ?? false) ? 'default' : 'pointer',
+        ),
+        ...config?.defaultOverrides,
+      },
+    });
+  }
+}
+
+export type ButtonProperties = VanillaButtonProperties & PropsWithChildren;
+
+export const Button = build<ButtonClass, ButtonProperties>(
+  ButtonClass,
+  'ButtonDefault',
 );
+
+export { buttonSizes, buttonVariants };

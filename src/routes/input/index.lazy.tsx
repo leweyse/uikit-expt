@@ -7,20 +7,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { forwardObjectEvents } from '@pmndrs/pointer-events';
 import { computed, signal } from '@preact/signals-core';
 import { CameraControls } from '@react-three/drei';
-import { createPortal, useFrame } from '@react-three/fiber';
+import { createPortal, useFrame, useThree } from '@react-three/fiber';
 import { Handle, HandleTarget } from '@react-three/handle';
-import { Container, DefaultProperties, Root } from '@react-three/uikit';
+import { Container, withOpacity } from '@react-three/uikit';
 import {
   Diamond,
   LoaderCircle,
-  MoveUp,
   RotateCcw,
+  SendHorizontal,
 } from '@react-three/uikit-lucide';
 import { IfInSessionMode } from '@react-three/xr';
 import { useMutation } from '@tanstack/react-query';
 import { createLazyFileRoute } from '@tanstack/react-router';
 
-import { Button } from '@/common/canvas/button';
+import { Button, buttonVariants } from '@/common/canvas/button';
 import { Fullscreen } from '@/common/canvas/fullscreen';
 import { colors } from '@/common/canvas/theme';
 import { Github, Reference } from '@/common/dom/reference';
@@ -39,8 +39,8 @@ import {
   ResetTunnel,
 } from './-tunnels';
 
-const MD_FACTOR = 3;
-const SM_FACTOR = 2;
+const MD_FACTOR = 2;
+const SM_FACTOR = 1.5;
 
 export const Route = createLazyFileRoute('/input/')({
   component: () => (
@@ -50,10 +50,6 @@ export const Route = createLazyFileRoute('/input/')({
       </Header.In>
 
       <Canvas.In>
-        <IfInSessionMode deny={['immersive-ar', 'immersive-vr']}>
-          <CameraControls />
-        </IfInSessionMode>
-
         <Prompt />
       </Canvas.In>
 
@@ -69,6 +65,8 @@ export const Route = createLazyFileRoute('/input/')({
 function Prompt() {
   const [inputMesh, setInputMesh] = useState<THREE.Object3D | null>(null);
   const [imageMesh, setImageMesh] = useState<THREE.Object3D | null>(null);
+
+  const cameraControlsRef = useRef<CameraControls>(null);
 
   const {
     target: inputBuffer,
@@ -116,6 +114,8 @@ function Prompt() {
   return (
     <>
       <IfInSessionMode deny={['immersive-ar', 'immersive-vr']}>
+        <CameraControls ref={cameraControlsRef} />
+
         <group position={[0, 0, 0.01]}>
           <ResetTunnel.Out />
         </group>
@@ -123,13 +123,16 @@ function Prompt() {
 
       {createPortal(
         <Fullscreen
-          distanceToCamera={2}
           camera={inputCamera}
           scene={inputScene}
           display='flex'
           alignItems='center'
         >
-          <ChatInput inputBuffer={inputBuffer} imageBuffer={imageBuffer} />
+          <ChatInput
+            inputBuffer={inputBuffer}
+            imageBuffer={imageBuffer}
+            cameraControls={cameraControlsRef.current}
+          />
         </Fullscreen>,
         inputScene as unknown as THREE.Object3D,
       )}
@@ -198,7 +201,10 @@ const delay = (ms: number) => {
 function ChatInput(props: {
   inputBuffer: THREE.WebGLRenderTarget;
   imageBuffer: THREE.WebGLRenderTarget;
+  cameraControls: CameraControls | null;
 }) {
+  const { gl } = useThree();
+
   const inputShaderMaterial =
     useRef<CustomShaderRef<typeof WrapMaterial>>(null);
   const imageShaderMaterial =
@@ -206,7 +212,7 @@ function ChatInput(props: {
   const imageElem = useRef<ComponentRef<typeof Image>>(null);
 
   const inputSignal = useMemo(() => signal('Stereo Mind Game album cover'), []);
-  const isRecording = useMemo(() => signal(false), []);
+  const isRecHovered = useMemo(() => signal(false), []);
 
   const [loaderRotationZ, loaderRotationZSpring] = useSpringSignal(0);
   const [recRotationZ, recRotationZSpring] = useSpringSignal(0);
@@ -288,36 +294,17 @@ function ChatInput(props: {
     },
   });
 
-  const recButtonBg = computed(() => {
-    if (isRecording.value) {
-      return colors.primary.value;
-    }
-
-    return colors.secondary.value;
+  const recButtonVariant = computed(() => {
+    if (isRecHovered.value) return 'default';
+    return 'outline';
   });
 
   const recIconColor = computed(() => {
-    if (isRecording.value) {
-      return colors.primaryForeground.value;
-    }
-
-    return colors.secondaryForeground.value;
+    return buttonVariants[recButtonVariant.value]?.hover?.color?.value;
   });
 
-  const sendButtonBg = computed(() => {
-    if (inputSignal.value.length > 0) {
-      return colors.primary.value;
-    }
-
-    return colors.secondary.value;
-  });
-
-  const sendIconColor = computed(() => {
-    if (inputSignal.value.length > 0) {
-      return colors.primaryForeground.value;
-    }
-
-    return colors.secondaryForeground.value;
+  const sendButtonDisabled = computed(() => {
+    return !(inputSignal.value.length > 0);
   });
 
   const inputPointerEvents = computed(() => {
@@ -329,12 +316,6 @@ function ChatInput(props: {
     if (resetOpacity.value === 1) return 'auto';
     return 'none';
   });
-
-  const submit = () => {
-    if (inputSignal.value.length > 0) {
-      mutation.mutate(inputSignal.value);
-    }
-  };
 
   const reset = useCallback(() => {
     recRotationZSpring.start(0);
@@ -373,38 +354,31 @@ function ChatInput(props: {
   return (
     <>
       <ResetTunnel.In>
-        <Root
+        <Button
+          size='icon'
+          variant='outline'
           width={8}
           height={8}
-          justifyContent='center'
-          alignItems='center'
-          positionBottom={-32}
+          padding={2}
+          flexShrink={0}
+          borderRadius={99}
+          borderWidth={0.25}
+          positionBottom={-64}
+          borderColor={withOpacity(colors.input, resetOpacity)}
+          backgroundColor={withOpacity(colors.background, resetOpacity)}
+          hover={{
+            backgroundColor: colors.accent,
+            color: colors.accentForeground,
+          }}
+          pointerEvents={resetPointerEvents}
+          onClick={() => {
+            if (resetPointerEvents.value === 'auto') {
+              reset();
+            }
+          }}
         >
-          <Button
-            variant='outline'
-            flexShrink={0}
-            padding={0}
-            width='100%'
-            height='100%'
-            borderRadius={99}
-            borderWidth={0.25}
-            borderOpacity={resetOpacity}
-            backgroundOpacity={resetOpacity}
-            pointerEvents={resetPointerEvents}
-            onClick={() => {
-              if (resetPointerEvents.value === 'auto') {
-                reset();
-              }
-            }}
-          >
-            <RotateCcw
-              flexShrink={0}
-              width={4}
-              height={4}
-              opacity={resetOpacity}
-            />
-          </Button>
-        </Root>
+          <RotateCcw opacity={resetOpacity} color={colors.accentForeground} />
+        </Button>
       </ResetTunnel.In>
 
       <ImageTunnel.In>
@@ -414,12 +388,14 @@ function ChatInput(props: {
             src={mutation.data.src}
             srcAspectRatio={mutation.data.aspectRatio}
             borderRadius={40}
+            minHeight={52}
             sm={{
               borderRadius: 40 * SM_FACTOR,
-              minHeight: 40 * SM_FACTOR,
+              minHeight: 52 * SM_FACTOR,
             }}
             md={{
-              minHeight: 40 * MD_FACTOR,
+              borderRadius: 40 * MD_FACTOR,
+              minHeight: 52 * MD_FACTOR,
             }}
           />
         ) : null}
@@ -448,48 +424,46 @@ function ChatInput(props: {
         flexDirection='row'
         alignItems='center'
         justifyContent='center'
-        width='100%'
-        paddingY={2}
         paddingX={12}
         backgroundColor={colors.secondary}
-        borderRadius={32}
+        borderRadius={40}
         pointerEvents={inputPointerEvents}
         sm={{
-          gap: 4 * SM_FACTOR,
-          paddingX: 10 * SM_FACTOR,
-          borderRadius: 32 * SM_FACTOR,
+          paddingX: 12 * SM_FACTOR,
+          borderRadius: 40 * SM_FACTOR,
         }}
         md={{
-          gap: 6 * MD_FACTOR,
-          paddingX: 10 * MD_FACTOR,
-          borderRadius: 32 * MD_FACTOR,
+          paddingX: 12 * MD_FACTOR,
+          borderRadius: 40 * MD_FACTOR,
         }}
       >
         <Button
-          flexShrink={0}
+          size='icon'
+          variant={recButtonVariant}
           width={36}
-          aspectRatio={1}
-          backgroundColor={recButtonBg}
-          borderWidth={1}
+          height={36}
+          flexShrink={0}
+          backgroundColor={colors.secondary}
           borderColor={colors.secondaryForeground}
           borderRadius={99}
           sm={{
-            width: 28 * SM_FACTOR,
-            borderRadius: 99 * SM_FACTOR,
+            width: 36 * SM_FACTOR,
+            height: 36 * SM_FACTOR,
           }}
           md={{
-            width: 28 * MD_FACTOR,
-            borderRadius: 99 * MD_FACTOR,
+            width: 36 * MD_FACTOR,
+            height: 36 * MD_FACTOR,
+          }}
+          onHoverChange={(isHover) => {
+            isRecHovered.value = isHover;
           }}
           onPointerDown={() => {
-            isRecording.value = true;
             recRotationZSpring.start(-180, {
               loop: true,
               config: { duration: 800 },
             });
           }}
           onPointerUp={() => {
-            isRecording.value = false;
             recRotationZSpring.start(0, {
               loop: false,
               config: { duration: undefined },
@@ -498,98 +472,125 @@ function ChatInput(props: {
         >
           <Diamond
             flexShrink={0}
-            width={14}
-            height={14}
+            width={16}
+            height={16}
             color={recIconColor}
-            transformRotateZ={recRotationZ}
             sm={{
-              width: 12 * SM_FACTOR,
-              height: 12 * SM_FACTOR,
+              width: 16 * SM_FACTOR,
+              height: 16 * SM_FACTOR,
             }}
             md={{
-              width: 12 * MD_FACTOR,
-              height: 12 * MD_FACTOR,
+              width: 16 * MD_FACTOR,
+              height: 16 * MD_FACTOR,
             }}
+            transformRotateZ={recRotationZ}
           />
         </Button>
 
-        <Container width='100%' overflow='scroll'>
+        <Container
+          width='100%'
+          overflow='scroll'
+          scrollbarColor={colors.border}
+          // Camera-controls interrupts scrolling and text selection
+          onPointerEnter={() => {
+            props.cameraControls?.disconnect();
+          }}
+          onPointerLeave={() => {
+            props.cameraControls?.connect(gl.domElement);
+          }}
+        >
           <Container
             width='100%'
-            minHeight={48}
-            backgroundColor={colors.secondary}
+            backgroundColor='transparent'
+            minHeight={56}
             sm={{
-              minHeight: 40 * SM_FACTOR,
+              minHeight: 56 * SM_FACTOR,
             }}
             md={{
-              minHeight: 40 * MD_FACTOR,
+              minHeight: 56 * MD_FACTOR,
             }}
           >
             <Input
-              multiline
               placeholder='Type your message here'
               value={inputSignal}
               onValueChange={(value) => {
                 inputSignal.value = value;
               }}
-              paddingY={10}
-              backgroundColor={colors.secondary}
+              backgroundColor='transparent'
               borderWidth={0}
-              lineHeight={20}
-              fontSize={16}
+              paddingX={8}
+              fontSize={18}
+              {...{
+                '*': {
+                  sm: {
+                    paddingX: 8 * SM_FACTOR,
+                    fontSize: 18 * SM_FACTOR,
+                  },
+                  md: {
+                    paddingX: 8 * MD_FACTOR,
+                    fontSize: 18 * MD_FACTOR,
+                  },
+                },
+              }}
               sm={{
-                paddingY: 10 * SM_FACTOR,
-                fontSize: 12 * SM_FACTOR,
-                lineHeight: 16 * SM_FACTOR,
+                paddingX: 8 * SM_FACTOR,
               }}
               md={{
-                paddingY: 10 * MD_FACTOR,
-                fontSize: 12 * MD_FACTOR,
-                lineHeight: 16 * MD_FACTOR,
+                paddingX: 8 * MD_FACTOR,
               }}
             />
           </Container>
         </Container>
 
         <Button
-          flexShrink={0}
+          size='icon'
           width={36}
-          aspectRatio={1}
-          backgroundColor={sendButtonBg}
-          borderWidth={1}
-          borderColor={colors.secondaryForeground}
+          height={36}
+          flexShrink={0}
           borderRadius={99}
-          disabled={mutation.isPending}
-          borderOpacity={undefined}
-          backgroundOpacity={undefined}
-          sm={{ width: 28 * SM_FACTOR, borderRadius: 99 * SM_FACTOR }}
+          sm={{
+            width: 36 * SM_FACTOR,
+            height: 36 * SM_FACTOR,
+          }}
           md={{
-            width: 28 * MD_FACTOR,
-            borderRadius: 99 * MD_FACTOR,
+            width: 36 * MD_FACTOR,
+            height: 36 * MD_FACTOR,
           }}
-          hover={{
-            backgroundOpacity: 0.8,
+          disabled={sendButtonDisabled || mutation.isPending}
+          onClick={() => {
+            if (inputSignal.value.length > 0) {
+              mutation.mutate(inputSignal.value);
+            }
           }}
-          onClick={submit}
         >
-          <DefaultProperties
-            flexShrink={0}
-            width={14}
-            height={14}
-            color={sendIconColor}
-            opacity={1}
-            sm={{ width: 12 * SM_FACTOR, height: 12 * SM_FACTOR }}
-            md={{
-              width: 12 * MD_FACTOR,
-              height: 12 * MD_FACTOR,
-            }}
-          >
-            {mutation.isPending ? (
-              <LoaderCircle transformRotateZ={loaderRotationZ} />
-            ) : (
-              <MoveUp />
-            )}
-          </DefaultProperties>
+          {mutation.isPending ? (
+            <LoaderCircle
+              width={16}
+              height={16}
+              transformRotateZ={loaderRotationZ}
+              sm={{
+                width: 16 * SM_FACTOR,
+                height: 16 * SM_FACTOR,
+              }}
+              md={{
+                width: 16 * MD_FACTOR,
+                height: 16 * MD_FACTOR,
+              }}
+            />
+          ) : (
+            <SendHorizontal
+              width={16}
+              height={16}
+              sm={{
+                width: 16 * SM_FACTOR,
+                height: 16 * SM_FACTOR,
+              }}
+              md={{
+                width: 16 * MD_FACTOR,
+                height: 16 * MD_FACTOR,
+              }}
+            />
+          )}
         </Button>
       </Container>
     </>

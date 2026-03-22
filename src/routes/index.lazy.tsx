@@ -113,7 +113,6 @@ function Welcome() {
             <Text
               fontSize={60}
               fontWeight='light'
-              fontFamily='heming'
               sm={{ fontSize: 120 }}
               md={{ fontSize: 200 }}
             >
@@ -139,12 +138,7 @@ function Welcome() {
                 }}
                 onClick={() => navigate({ to: '/card' })}
               >
-                <Text
-                  fontFamily='satoshi'
-                  fontSize={16}
-                  sm={{ fontSize: 24 }}
-                  md={{ fontSize: 36 }}
-                >
+                <Text fontSize={16} sm={{ fontSize: 24 }} md={{ fontSize: 36 }}>
                   visit
                 </Text>
                 <MoveRight

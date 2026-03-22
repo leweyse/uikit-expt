@@ -1,23 +1,22 @@
-import { type ReactNode, type RefAttributes, useMemo, useState } from 'react';
-import { computed } from '@preact/signals-core';
+import type { FC } from 'react';
+
+import { useMemo } from 'react';
+import { computed, type ReadonlySignal } from '@preact/signals-core';
 import {
-  type InputProperties as BaseInputProperties,
-  type ContainerRef,
-  DefaultProperties,
-  Input as InputImpl,
-  type InputInternals,
+  Container,
   Text,
+  Textarea,
+  type TextareaProperties,
+  withOpacity,
 } from '@react-three/uikit';
 
 import { colors } from '@/common/canvas/theme';
 
-export type InputProperties = BaseInputProperties & {
-  placeholder?: string;
-};
-
-export const Input: (
-  props: InputProperties & RefAttributes<ContainerRef>,
-) => ReactNode = ({
+export const Input: FC<
+  TextareaProperties & {
+    value: ReadonlySignal<string>;
+  }
+> = ({
   autocomplete,
   panelMaterialClass,
   value,
@@ -27,34 +26,36 @@ export const Input: (
   disabled,
   placeholder,
   type,
-  multiline = false,
   borderRadius,
   ...props
 }) => {
-  const [internal, setInternal] = useState<InputInternals | null>(null);
-
-  const placeholderOpacity = useMemo(() => {
-    if (internal == null) {
-      return undefined;
-    }
-    return computed(() => (internal.current.value.length > 0 ? 0 : undefined));
-  }, [internal]);
+  const displayPlaceholder = useMemo(() => {
+    return computed(() => {
+      if (value.value.length > 0) return 'none';
+      return 'initial';
+    });
+  }, [value]);
 
   return (
-    <DefaultProperties
-      fontSize={14}
-      height='100%'
+    <Container
       width='100%'
-      borderWidth={1}
-      paddingX={12}
+      height='100%'
+      paddingX={10}
       paddingY={8}
-      lineHeight={20}
-      opacity={disabled ? 0.5 : undefined}
-      backgroundOpacity={disabled ? 0.5 : undefined}
+      positionType='relative'
       {...props}
+      {...{
+        '*': {
+          height: '100%',
+          width: '100%',
+          paddingX: 6,
+          paddingY: 8,
+          lineHeight: 1,
+          ...props['*'],
+        },
+      }}
     >
-      <InputImpl
-        ref={setInternal}
+      <Textarea
         autocomplete={autocomplete}
         borderRadius={borderRadius}
         borderColor={colors.input}
@@ -62,7 +63,6 @@ export const Input: (
           borderColor: colors.ring,
         }}
         panelMaterialClass={panelMaterialClass}
-        multiline={multiline}
         value={value}
         defaultValue={defaultValue}
         onValueChange={onValueChange}
@@ -70,17 +70,22 @@ export const Input: (
         disabled={disabled}
         type={type}
       />
+
       {placeholder != null && (
-        <Text
-          color={colors.mutedForeground}
-          opacity={placeholderOpacity}
-          borderOpacity={0}
-          inset={0}
+        <Container
+          display={displayPlaceholder}
           positionType='absolute'
+          inset={0}
+          pointerEvents='none'
+          {...{
+            '*': {
+              color: withOpacity(colors.mutedForeground, 0.6),
+            },
+          }}
         >
-          {placeholder}
-        </Text>
+          <Text>{placeholder}</Text>
+        </Container>
       )}
-    </DefaultProperties>
+    </Container>
   );
 };

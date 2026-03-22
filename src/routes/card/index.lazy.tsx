@@ -1,7 +1,10 @@
+import type { RefObject } from 'react';
+import type { Group } from 'three';
+
 import { animated } from '@react-spring/three';
 import { CameraControls } from '@react-three/drei';
 import { Handle } from '@react-three/handle';
-import { Content, Root, Text } from '@react-three/uikit';
+import { Container, Content, Text } from '@react-three/uikit';
 import { IfInSessionMode } from '@react-three/xr';
 import { createLazyFileRoute } from '@tanstack/react-router';
 
@@ -27,7 +30,7 @@ export const Route = createLazyFileRoute('/card/')({
       <Canvas.In>
         <IfInSessionMode deny={['immersive-ar', 'immersive-vr']}>
           <CameraControls />
-          <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={500} />
+          <OrthographicCamera makeDefault position={[0, 0, 1]} zoom={250} />
         </IfInSessionMode>
 
         <IfInSessionMode allow={['immersive-vr', 'immersive-ar']}>
@@ -55,27 +58,31 @@ export const Route = createLazyFileRoute('/card/')({
   ),
 });
 
+type IconProps = {
+  ref?: RefObject<Group>;
+};
+
 const AnimatedColumns = animated(Columns);
 
-const InteractiveColumns = () => {
+const InteractiveColumns = ({ ref, ...props }: IconProps) => {
   const { edgeColor } = useCardIcon();
 
   // @ts-expect-error - not sure how to type this
-  return <AnimatedColumns edgeColor={edgeColor} />;
+  return <AnimatedColumns ref={ref} edgeColor={edgeColor} {...props} />;
 };
 
 const AnimatedCubes = animated(Cubes);
 
-const InteractiveCubes = () => {
+const InteractiveCubes = ({ ref, ...props }: IconProps) => {
   const { edgeColor } = useCardIcon();
 
   // @ts-expect-error - not sure how to type this
-  return <AnimatedCubes edgeColor={edgeColor} />;
+  return <AnimatedCubes ref={ref} edgeColor={edgeColor} {...props} />;
 };
 
 function Cards() {
   return (
-    <Root
+    <Container
       display='flex'
       flexDirection='column'
       gap={12}
@@ -95,7 +102,7 @@ function Cards() {
           </Text>
         </CardDescription>
 
-        <Content transformScale={0.75}>
+        <Content transformScale={0.4}>
           <InteractiveColumns />
         </Content>
       </Card>
@@ -113,10 +120,10 @@ function Cards() {
           </Text>
         </CardDescription>
 
-        <Content transformScale={1.1}>
+        <Content transformScale={0.2}>
           <InteractiveCubes />
         </Content>
       </Card>
-    </Root>
+    </Container>
   );
 }

@@ -3,9 +3,9 @@
 
 import type { ReactThreeFiber } from '@react-three/fiber';
 
-import { EdgeMaterial } from '@/shaders/edge';
-import { BaseMaterial } from '@/shaders/base';
-import { WrapMaterial } from '@/shaders/wrap';
+import type { BaseMaterial } from '@/shaders/base';
+import type { EdgeMaterial } from '@/shaders/edge';
+import type { WrapMaterial } from '@/shaders/wrap';
 
 declare module '@react-three/fiber' {
   interface ThreeElements {
