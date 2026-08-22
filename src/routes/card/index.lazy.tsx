@@ -102,7 +102,7 @@ function Cards() {
           </Text>
         </CardDescription>
 
-        <Content transformScale={0.4}>
+        <Content>
           <InteractiveColumns />
         </Content>
       </Card>
@@ -120,7 +120,7 @@ function Cards() {
           </Text>
         </CardDescription>
 
-        <Content transformScale={0.2}>
+        <Content>
           <InteractiveCubes />
         </Content>
       </Card>

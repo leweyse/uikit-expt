@@ -12,9 +12,9 @@ type Props = {
   edgeColor?: Color;
 };
 
-export const Columns = ({ ref, edgeColor, ...props }: Props) => {
+export const Columns = ({ ref, edgeColor }: Props) => {
   return (
-    <group ref={ref} {...props}>
+    <group ref={ref} scale={1.25}>
       {columns.map((i) => (
         <Box key={i} position={[i * 0.325, 0, 0]} args={[0.225, 1, 1]}>
           <edgeMaterial key={EdgeMaterial.key} uEdgeColor={edgeColor} />
@@ -33,9 +33,9 @@ const cubes: Record<number, [number, number, number]> = {
   5: [0, -1, 0],
 };
 
-export const Cubes = ({ ref, edgeColor, ...props }: Props) => {
+export const Cubes = ({ ref, edgeColor }: Props) => {
   return (
-    <group ref={ref} {...props}>
+    <group ref={ref} scale={0.6}>
       {Object.entries(cubes).map(([idx, pos]) => (
         <Box key={idx} position={pos} args={[1, 1, 1]}>
           <edgeMaterial key={EdgeMaterial.key} uEdgeColor={edgeColor} />

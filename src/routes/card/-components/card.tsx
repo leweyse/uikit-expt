@@ -10,6 +10,7 @@ import { animated } from '@react-spring/three';
 import { Container, withOpacity } from '@react-three/uikit';
 import tunnel from 'tunnel-rat';
 
+import { FontsProvider } from '@/common/canvas/fonts-provider';
 import { colors } from '@/common/canvas/theme';
 import { themes } from '@/common/themes';
 import { useSpringSignal } from '@/utils/use-spring-signal';
@@ -64,7 +65,7 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
   const { label, description } = useTunnels();
 
   const [inset, insetSpring] = useSpringSignal(0);
-  const [padding, paddingSpring] = useSpringSignal(12);
+  const [transformScale, transformScaleSpring] = useSpringSignal(0.3);
   const [transformRotate, transformRotateSpring] = useSpringSignal(0);
   const transformRotateWOffset = useMemo(
     () => computed(() => transformRotate.value + 45),
@@ -91,7 +92,7 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
         edgeColorSpring.start(themes.violet.light.primary);
 
         insetSpring.start(-6);
-        paddingSpring.start(6);
+        transformScaleSpring.start(0.47);
         hoverWidthSpring.start('0%');
 
         transformRotateSpring.start(360, {
@@ -103,7 +104,7 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
         edgeColorSpring.start(themes.neutral.light.primary);
 
         insetSpring.start(0);
-        paddingSpring.start(12);
+        transformScaleSpring.start(0.3);
         hoverWidthSpring.start('100%');
 
         transformRotateSpring.start(0, {
@@ -117,8 +118,9 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
         alignItems='center'
         justifyContent='center'
         positionType='relative'
-        width={88}
-        aspectRatio={1}
+        flexShrink={0}
+        width={64}
+        height={64}
         borderWidth={1}
         borderColor={withOpacity(colors.border, 0.8)}
       >
@@ -137,9 +139,7 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
               display='contents'
               {...{
                 '*': {
-                  positionType: 'absolute',
-                  inset: inset,
-                  padding,
+                  transformScale,
                   transformRotateX: transformRotateWOffset,
                   transformRotateY: transformRotateWOffset,
                 },
@@ -236,7 +236,9 @@ export const Card: FC<CardInternalProps> = ({ children, ...props }) => {
 
   return (
     <TunnelsProvider value={tunnels}>
-      <CardInternal {...props}>{children}</CardInternal>
+      <FontsProvider>
+        <CardInternal {...props}>{children}</CardInternal>
+      </FontsProvider>
     </TunnelsProvider>
   );
 };
