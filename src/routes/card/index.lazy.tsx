@@ -102,7 +102,7 @@ function Cards() {
           </Text>
         </CardDescription>
 
-        <Content>
+        <Content depthAlign='middle' transformScale={0.75}>
           <InteractiveColumns />
         </Content>
       </Card>
@@ -120,7 +120,7 @@ function Cards() {
           </Text>
         </CardDescription>
 
-        <Content>
+        <Content depthAlign='middle' transformScale={1.2}>
           <InteractiveCubes />
         </Content>
       </Card>

@@ -65,7 +65,7 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
   const { label, description } = useTunnels();
 
   const [inset, insetSpring] = useSpringSignal(0);
-  const [transformScale, transformScaleSpring] = useSpringSignal(0.3);
+  const [padding, paddingSpring] = useSpringSignal(12);
   const [transformRotate, transformRotateSpring] = useSpringSignal(0);
   const transformRotateWOffset = useMemo(
     () => computed(() => transformRotate.value + 45),
@@ -92,7 +92,7 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
         edgeColorSpring.start(themes.violet.light.primary);
 
         insetSpring.start(-6);
-        transformScaleSpring.start(0.47);
+        paddingSpring.start(6);
         hoverWidthSpring.start('0%');
 
         transformRotateSpring.start(360, {
@@ -104,7 +104,7 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
         edgeColorSpring.start(themes.neutral.light.primary);
 
         insetSpring.start(0);
-        transformScaleSpring.start(0.3);
+        paddingSpring.start(12);
         hoverWidthSpring.start('100%');
 
         transformRotateSpring.start(0, {
@@ -139,7 +139,9 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
               display='contents'
               {...{
                 '*': {
-                  transformScale,
+                  positionType: 'absolute',
+                  inset: 0,
+                  padding,
                   transformRotateX: transformRotateWOffset,
                   transformRotateY: transformRotateWOffset,
                 },
