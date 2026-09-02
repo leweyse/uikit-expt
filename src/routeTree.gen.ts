@@ -10,37 +10,57 @@
 
 import { createFileRoute } from '@tanstack/react-router'
 
-// Import Routes
+import { Route as rootRouteImport } from './routes/__root'
 
-import { Route as rootRoute } from './routes/__root'
+const IndexLazyRouteImport = createFileRoute('/')()
+const InputIndexLazyRouteImport = createFileRoute('/input/')()
+const CardIndexLazyRouteImport = createFileRoute('/card/')()
 
-// Create Virtual Routes
-
-const IndexLazyImport = createFileRoute('/')()
-const InputIndexLazyImport = createFileRoute('/input/')()
-const CardIndexLazyImport = createFileRoute('/card/')()
-
-// Create/Update Routes
-
-const IndexLazyRoute = IndexLazyImport.update({
+const IndexLazyRoute = IndexLazyRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/index.lazy').then((d) => d.Route))
-
-const InputIndexLazyRoute = InputIndexLazyImport.update({
+const InputIndexLazyRoute = InputIndexLazyRouteImport.update({
   id: '/input/',
   path: '/input/',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/input/index.lazy').then((d) => d.Route))
-
-const CardIndexLazyRoute = CardIndexLazyImport.update({
+const CardIndexLazyRoute = CardIndexLazyRouteImport.update({
   id: '/card/',
   path: '/card/',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/card/index.lazy').then((d) => d.Route))
 
-// Populate the FileRoutesByPath interface
+export interface FileRoutesByFullPath {
+  '/': typeof IndexLazyRoute
+  '/card/': typeof CardIndexLazyRoute
+  '/input/': typeof InputIndexLazyRoute
+}
+export interface FileRoutesByTo {
+  '/': typeof IndexLazyRoute
+  '/card': typeof CardIndexLazyRoute
+  '/input': typeof InputIndexLazyRoute
+}
+export interface FileRoutesById {
+  __root__: typeof rootRouteImport
+  '/': typeof IndexLazyRoute
+  '/card/': typeof CardIndexLazyRoute
+  '/input/': typeof InputIndexLazyRoute
+}
+export interface FileRouteTypes {
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths: '/' | '/card/' | '/input/'
+  fileRoutesByTo: FileRoutesByTo
+  to: '/' | '/card' | '/input'
+  id: '__root__' | '/' | '/card/' | '/input/'
+  fileRoutesById: FileRoutesById
+}
+export interface RootRouteChildren {
+  IndexLazyRoute: typeof IndexLazyRoute
+  CardIndexLazyRoute: typeof CardIndexLazyRoute
+  InputIndexLazyRoute: typeof InputIndexLazyRoute
+}
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
@@ -48,60 +68,24 @@ declare module '@tanstack/react-router' {
       id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexLazyImport
-      parentRoute: typeof rootRoute
-    }
-    '/card/': {
-      id: '/card/'
-      path: '/card'
-      fullPath: '/card'
-      preLoaderRoute: typeof CardIndexLazyImport
-      parentRoute: typeof rootRoute
+      preLoaderRoute: typeof IndexLazyRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/input/': {
       id: '/input/'
       path: '/input'
-      fullPath: '/input'
-      preLoaderRoute: typeof InputIndexLazyImport
-      parentRoute: typeof rootRoute
+      fullPath: '/input/'
+      preLoaderRoute: typeof InputIndexLazyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/card/': {
+      id: '/card/'
+      path: '/card'
+      fullPath: '/card/'
+      preLoaderRoute: typeof CardIndexLazyRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
-}
-
-// Create and export the route tree
-
-export interface FileRoutesByFullPath {
-  '/': typeof IndexLazyRoute
-  '/card': typeof CardIndexLazyRoute
-  '/input': typeof InputIndexLazyRoute
-}
-
-export interface FileRoutesByTo {
-  '/': typeof IndexLazyRoute
-  '/card': typeof CardIndexLazyRoute
-  '/input': typeof InputIndexLazyRoute
-}
-
-export interface FileRoutesById {
-  __root__: typeof rootRoute
-  '/': typeof IndexLazyRoute
-  '/card/': typeof CardIndexLazyRoute
-  '/input/': typeof InputIndexLazyRoute
-}
-
-export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/card' | '/input'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/card' | '/input'
-  id: '__root__' | '/' | '/card/' | '/input/'
-  fileRoutesById: FileRoutesById
-}
-
-export interface RootRouteChildren {
-  IndexLazyRoute: typeof IndexLazyRoute
-  CardIndexLazyRoute: typeof CardIndexLazyRoute
-  InputIndexLazyRoute: typeof InputIndexLazyRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -109,31 +93,6 @@ const rootRouteChildren: RootRouteChildren = {
   CardIndexLazyRoute: CardIndexLazyRoute,
   InputIndexLazyRoute: InputIndexLazyRoute,
 }
-
-export const routeTree = rootRoute
+export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-/* ROUTE_MANIFEST_START
-{
-  "routes": {
-    "__root__": {
-      "filePath": "__root.tsx",
-      "children": [
-        "/",
-        "/card/",
-        "/input/"
-      ]
-    },
-    "/": {
-      "filePath": "index.lazy.tsx"
-    },
-    "/card/": {
-      "filePath": "card/index.lazy.tsx"
-    },
-    "/input/": {
-      "filePath": "input/index.lazy.tsx"
-    }
-  }
-}
-ROUTE_MANIFEST_END */

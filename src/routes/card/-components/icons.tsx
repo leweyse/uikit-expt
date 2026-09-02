@@ -1,17 +1,18 @@
-import type { FC } from 'react';
-import type { Color } from 'three';
+import type { RefObject } from 'react';
+import type * as THREE from 'three';
 
 import { EdgeMaterial } from '@/shaders/edge';
 
 const columns = Array.from({ length: 3 }).map((_, i) => i);
 
 type Props = {
-  edgeColor?: Color;
+  ref?: RefObject<THREE.Group>;
+  edgeColor?: THREE.Color;
 };
 
-export const Columns: FC<Props> = ({ edgeColor }) => {
+export const Columns = ({ edgeColor, ...props }: Props) => {
   return (
-    <group>
+    <group {...props}>
       {columns.map((i) => (
         <mesh key={i} position={[i * 0.3, 0, 0]}>
           <boxGeometry args={[0.175, 1, 1]} />
@@ -31,9 +32,9 @@ const cubes: Record<number, [number, number, number]> = {
   5: [0, -1, 0],
 };
 
-export const Cubes: FC<Props> = ({ edgeColor }) => {
+export const Cubes = ({ edgeColor, ...props }: Props) => {
   return (
-    <group>
+    <group {...props}>
       {Object.entries(cubes).map(([idx, pos]) => (
         <mesh key={idx} position={pos}>
           <boxGeometry args={[1, 1, 1]} />

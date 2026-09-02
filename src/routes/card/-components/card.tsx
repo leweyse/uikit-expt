@@ -7,9 +7,10 @@ import type { PropsWithChildren } from '@/types';
 import { createContext, useContext, useMemo } from 'react';
 import { computed } from '@preact/signals-core';
 import { animated } from '@react-spring/three';
-import { Container, DefaultProperties } from '@react-three/uikit';
+import { Container, withOpacity } from '@react-three/uikit';
 import tunnel from 'tunnel-rat';
 
+import { FontsProvider } from '@/common/canvas/fonts-provider';
 import { colors } from '@/common/canvas/theme';
 import { themes } from '@/common/themes';
 import { useSpringSignal } from '@/utils/use-spring-signal';
@@ -85,7 +86,7 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
       width='100%'
       padding={28}
       borderRadius={20}
-      backgroundColor={themes.neutral.light.background}
+      backgroundColor='transparent'
       {...props}
       onPointerOver={() => {
         edgeColorSpring.start(themes.violet.light.primary);
@@ -113,12 +114,15 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
       }}
     >
       <Container
+        display='flex'
+        alignItems='center'
+        justifyContent='center'
         positionType='relative'
-        width={88}
-        aspectRatio={1}
+        flexShrink={0}
+        width={64}
+        height={64}
         borderWidth={1}
-        borderColor={colors.border}
-        borderOpacity={0.25}
+        borderColor={withOpacity(colors.border, 0.8)}
       >
         <Container positionType='absolute' inset={inset}>
           <Corner positionTop={-1} positionLeft={-1} transformRotateZ={0} />
@@ -130,19 +134,22 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
           />
           <Corner positionBottom={-1} positionLeft={-1} transformRotateZ={90} />
 
-          <DefaultProperties
-            depthWrite
-            depthAlign='middle'
-            positionType='absolute'
-            inset={0}
-            padding={padding}
-            transformRotateX={transformRotateWOffset}
-            transformRotateY={transformRotateWOffset}
-          >
-            <AnimatedIconProvider value={{ edgeColor: edgeColorSpring }}>
+          <AnimatedIconProvider value={{ edgeColor: edgeColorSpring }}>
+            <Container
+              display='contents'
+              {...{
+                '*': {
+                  positionType: 'absolute',
+                  inset: 0,
+                  padding,
+                  transformRotateX: transformRotateWOffset,
+                  transformRotateY: transformRotateWOffset,
+                },
+              }}
+            >
               {children}
-            </AnimatedIconProvider>
-          </DefaultProperties>
+            </Container>
+          </AnimatedIconProvider>
         </Container>
       </Container>
 
@@ -156,6 +163,7 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
           <label.Out />
 
           <Container
+            depthWrite
             positionType='absolute'
             positionTop={0}
             positionBottom={0}
@@ -164,10 +172,9 @@ const CardInternal: FC<CardInternalProps> = ({ children, ...props }) => {
             backgroundColor='black'
             overflow='hidden'
             zIndexOffset={2}
+            {...{ '*': { color: 'white' } }}
           >
-            <DefaultProperties color='white'>
-              <label.Out />
-            </DefaultProperties>
+            <label.Out />
           </Container>
         </Container>
 
@@ -182,15 +189,19 @@ export const CardLabel: FC<PropsWithChildren> = ({ children }) => {
 
   return (
     <label.In>
-      <DefaultProperties
-        paddingX={4}
-        fontSize={20}
-        fontWeight='semi-bold'
-        letterSpacing={0.4}
-        lineHeight={28}
+      <Container
+        display='contents'
+        {...{
+          '*': {
+            paddingX: 4,
+            fontSize: 20,
+            fontWeight: 'semi-bold',
+            letterSpacing: 0.4,
+          },
+        }}
       >
         {children}
-      </DefaultProperties>
+      </Container>
     </label.In>
   );
 };
@@ -200,14 +211,19 @@ export const CardDescription: FC<PropsWithChildren> = ({ children }) => {
 
   return (
     <description.In>
-      <DefaultProperties
-        paddingX={4}
-        fontSize={16}
-        lineHeight={24}
-        color={colors.mutedForeground}
+      <Container
+        display='contents'
+        {...{
+          '*': {
+            paddingX: 4,
+            fontSize: 14,
+            color: colors.mutedForeground,
+            lineHeight: 1.5,
+          },
+        }}
       >
         {children}
-      </DefaultProperties>
+      </Container>
     </description.In>
   );
 };
@@ -222,7 +238,9 @@ export const Card: FC<CardInternalProps> = ({ children, ...props }) => {
 
   return (
     <TunnelsProvider value={tunnels}>
-      <CardInternal {...props}>{children}</CardInternal>
+      <FontsProvider>
+        <CardInternal {...props}>{children}</CardInternal>
+      </FontsProvider>
     </TunnelsProvider>
   );
 };

@@ -53,7 +53,7 @@ float edgeFactor(vec2 p, float strength) {
 void main() {
   float a = edgeFactor(vUv, uStrength);
 
-  vec3 c = mix(vec3(uEdgeColor), vec3(1), a);
+  vec3 c = mix(vec3(uEdgeColor), vec3(1.), a);
 
   gl_FragColor = vec4(c, 1.0);
 }
