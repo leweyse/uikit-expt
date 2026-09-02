@@ -1,5 +1,6 @@
 import { shaderMaterial } from '@react-three/drei';
 import { extend } from '@react-three/fiber';
+import * as THREE from 'three';
 
 import { themes } from '@/common/themes';
 
@@ -13,6 +14,13 @@ export const EdgeMaterial = shaderMaterial(
   },
   vert,
   frag,
+  (material) => {
+    const target = material as unknown as { color: THREE.Color } | undefined;
+
+    if (target != null) {
+      target.color ??= new THREE.Color();
+    }
+  },
 );
 
 extend({ EdgeMaterial });
