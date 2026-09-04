@@ -13,24 +13,24 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Route as rootRouteImport } from './routes/__root'
 
 const IndexLazyRouteImport = createFileRoute('/')()
-const InputIndexLazyRouteImport = createFileRoute('/input/')()
 const CardIndexLazyRouteImport = createFileRoute('/card/')()
+const InputIndexLazyRouteImport = createFileRoute('/input/')()
 
 const IndexLazyRoute = IndexLazyRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/index.lazy').then((d) => d.Route))
-const InputIndexLazyRoute = InputIndexLazyRouteImport.update({
-  id: '/input/',
-  path: '/input/',
-  getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/input/index.lazy').then((d) => d.Route))
 const CardIndexLazyRoute = CardIndexLazyRouteImport.update({
   id: '/card/',
   path: '/card/',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/card/index.lazy').then((d) => d.Route))
+const InputIndexLazyRoute = InputIndexLazyRouteImport.update({
+  id: '/input/',
+  path: '/input/',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/input/index.lazy').then((d) => d.Route))
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
@@ -71,18 +71,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexLazyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/input/': {
-      id: '/input/'
-      path: '/input'
-      fullPath: '/input/'
-      preLoaderRoute: typeof InputIndexLazyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/card/': {
       id: '/card/'
       path: '/card'
       fullPath: '/card/'
       preLoaderRoute: typeof CardIndexLazyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/input/': {
+      id: '/input/'
+      path: '/input'
+      fullPath: '/input/'
+      preLoaderRoute: typeof InputIndexLazyRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
