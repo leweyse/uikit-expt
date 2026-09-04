@@ -47,5 +47,6 @@
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vite-plugin-glsl": "^1.6.1"
-  }
+  },
+  "packageManager": "pnpm@12.3.1"
 }
