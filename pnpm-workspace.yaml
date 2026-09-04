@@ -1,0 +1,5 @@
+allowBuilds:
+  '@swc/core': false
+  esbuild: false
+minimumReleaseAgeExclude:
+  - lucide-react@1.41.0
