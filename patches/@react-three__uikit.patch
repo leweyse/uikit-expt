@@ -1,0 +1,27 @@
+diff --git a/dist/index.js b/dist/index.js
+index 024e5ccb6a5db61ee17bfc7cbc9ef6b21fc7149e..17517da2a8a0182398679657eb1868646cca74bf 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -7,14 +7,14 @@ import { createPortal, extend, useFrame, useStore, useThree } from '@react-three
+ import { Object3D } from 'three';
+ import { jsx } from 'react/jsx-runtime';
+ export { readReactive, Component as VanillaComponent, Container as VanillaContainer, Content as VanillaContent, Custom as VanillaCustom, Fullscreen as VanillaFullscreen, Image as VanillaImage, Video as VanillaVideo, Input as VanillaInput, Svg as VanillaSvg, Text as VanillaText, Textarea as VanillaTextarea, } from '@pmndrs/uikit';
+-export const Container = /* @__PURE__ */ build(VanillaContainer);
+-export const Content = /* @__PURE__ */ build(VanillaContent);
+-export const Custom = /* @__PURE__ */ build(VanillaCustom);
+-export const Image = /* @__PURE__ */ build(VanillaImage);
+-export const Video = /* @__PURE__ */ build(VanillaVideo);
+-export const Input = /* @__PURE__ */ build(VanillaInput);
+-export const Svg = /* @__PURE__ */ build(VanillaSvg);
+-export const Textarea = /* @__PURE__ */ build(VanillaTextarea);
++export const Container = /* @__PURE__ */ build(VanillaContainer, "Container");
++export const Content = /* @__PURE__ */ build(VanillaContent, "Content");
++export const Custom = /* @__PURE__ */ build(VanillaCustom, "Custom");
++export const Image = /* @__PURE__ */ build(VanillaImage, "Image");
++export const Video = /* @__PURE__ */ build(VanillaVideo, "Video");
++export const Input = /* @__PURE__ */ build(VanillaInput, "Input");
++export const Svg = /* @__PURE__ */ build(VanillaSvg, "Svg");
++export const Textarea = /* @__PURE__ */ build(VanillaTextarea, "Textarea");
+ export const Fullscreen = /* @__PURE__ */ (() => {
+     extend({ VanillaFullscreen });
+     return forwardRef(({ children, attachCamera, ...props }, forwardRef) => {

@@ -3,3 +3,5 @@ allowBuilds:
   esbuild: false
 minimumReleaseAgeExclude:
   - lucide-react@1.41.0
+patchedDependencies:
+  '@react-three/uikit': patches/@react-three__uikit.patch
