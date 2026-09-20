@@ -1,5 +1,4 @@
 import type { ComponentRef } from 'react';
-import type * as THREE from 'three';
 
 import type { CustomShaderRef } from '@/types';
 
@@ -9,7 +8,7 @@ import { computed, signal } from '@preact/signals-core';
 import { CameraControls } from '@react-three/drei';
 import { createPortal, useFrame, useThree } from '@react-three/fiber';
 import { Handle, HandleTarget } from '@react-three/handle';
-import { Container, withOpacity } from '@react-three/uikit';
+import { Container } from '@react-three/uikit';
 import {
   Diamond,
   LoaderCircle,
@@ -19,6 +18,7 @@ import {
 import { IfInSessionMode } from '@react-three/xr';
 import { useMutation } from '@tanstack/react-query';
 import { createLazyFileRoute } from '@tanstack/react-router';
+import * as THREE from 'three';
 
 import { Button, buttonVariants } from '@/common/canvas/button';
 import { Fullscreen } from '@/common/canvas/fullscreen';
@@ -27,7 +27,10 @@ import { Github, Reference } from '@/common/dom/reference';
 import { Canvas, Footer, Header } from '@/global/tunnels';
 import { WrapMaterial } from '@/shaders/wrap';
 import { useFBO, useFBOInXRFrame } from '@/utils/use-fbo';
-import { useSpringSignal } from '@/utils/use-spring-signal';
+import {
+  useSpringColorSignal,
+  useSpringSignal,
+} from '@/utils/use-spring-signal';
 
 import { Image } from './-components/image';
 import { Input } from './-components/input';
@@ -39,8 +42,9 @@ import {
   ResetTunnel,
 } from './-tunnels';
 
-const MD_FACTOR = 2;
 const SM_FACTOR = 1.5;
+const MD_FACTOR = 2;
+const LG_FACTOR = 2.75;
 
 export const Route = createLazyFileRoute('/input/')({
   component: () => (
@@ -212,10 +216,16 @@ function ChatInput(props: {
   const imageElem = useRef<ComponentRef<typeof Image>>(null);
 
   const inputSignal = useMemo(() => signal('Stereo Mind Game album cover'), []);
-  const isRecHovered = useMemo(() => signal(false), []);
+  const isMutating = useMemo(() => signal(false), []);
 
   const [loaderRotationZ, loaderRotationZSpring] = useSpringSignal(0);
   const [recRotationZ, recRotationZSpring] = useSpringSignal(0);
+  const [recBackgroundColor, recBackgroundColorSpring] = useSpringColorSignal(
+    buttonVariants.secondary.backgroundColor?.value,
+  );
+  const [recColor, recColorSpring] = useSpringSignal(
+    buttonVariants.secondary.color?.value,
+  );
   const [resetOpacity, resetOpacitySpring] = useSpringSignal(0);
 
   const [_, shaderRightSideProgress] = useSpringSignal(0, {
@@ -261,9 +271,7 @@ function ChatInput(props: {
       }
     },
     onRest: (signal) => {
-      if (signal.value > 0) {
-        shaderRightSideProgress.start(signal.value);
-      }
+      shaderRightSideProgress.start(signal.value);
     },
   });
 
@@ -275,12 +283,27 @@ function ChatInput(props: {
       // You can use any API you want here
       await delay(2000);
 
-      return {
-        src: '/DAUGHTER_STEREO-MIND-GAMES.jpeg',
-        aspectRatio: 1,
-      };
+      const promise = new Promise<{
+        src: string;
+        texture: THREE.Texture<HTMLImageElement>;
+        aspectRatio: number;
+      }>((resolve) => {
+        new THREE.TextureLoader().load(
+          '/DAUGHTER_STEREO-MIND-GAMES.jpeg',
+          (texture) => {
+            resolve({
+              src: '/DAUGHTER_STEREO-MIND-GAMES.jpeg',
+              texture,
+              aspectRatio: texture.image.width / texture.image.height,
+            });
+          },
+        );
+      });
+
+      return await promise;
     },
     onMutate: () => {
+      isMutating.value = true;
       loaderRotationZSpring.start(-360, {
         loop: true,
         config: { duration: 1000 },
@@ -290,32 +313,36 @@ function ChatInput(props: {
       shaderLeftSideProgress.start(1);
     },
     onSettled: () => {
+      isMutating.value = false;
       loaderRotationZSpring.start(0);
     },
   });
 
-  const recButtonVariant = computed(() => {
-    if (isRecHovered.value) return 'default';
-    return 'outline';
-  });
+  const isDisabled = useMemo(() => {
+    return computed(() => {
+      return isMutating.value || !(inputSignal.value.length > 0);
+    });
+  }, []);
 
-  const recIconColor = computed(() => {
-    return buttonVariants[recButtonVariant.value]?.hover?.color?.value;
-  });
+  const isRotating = useMemo(() => {
+    return computed(() => {
+      return isMutating.value ? loaderRotationZ.value : 0;
+    });
+  }, []);
 
-  const sendButtonDisabled = computed(() => {
-    return !(inputSignal.value.length > 0);
-  });
+  const inputPointerEvents = useMemo(() => {
+    return computed(() => {
+      if (shaderLeftSide.value > 0) return 'none';
+      return 'auto';
+    });
+  }, []);
 
-  const inputPointerEvents = computed(() => {
-    if (shaderLeftSide.value > 0) return 'none';
-    return 'auto';
-  });
-
-  const resetPointerEvents = computed(() => {
-    if (resetOpacity.value === 1) return 'auto';
-    return 'none';
-  });
+  const resetPointerEvents = useMemo(() => {
+    return computed(() => {
+      if (resetOpacity.value === 1) return 'auto';
+      return 'none';
+    });
+  }, []);
 
   const reset = useCallback(() => {
     recRotationZSpring.start(0);
@@ -323,7 +350,6 @@ function ChatInput(props: {
     if (imageElem.current) {
       imageElem.current.reset().then(() => {
         shaderLeftSideProgress.start(0);
-        shaderRightSideProgress.start(0);
       });
     }
 
@@ -364,12 +390,7 @@ function ChatInput(props: {
           borderRadius={99}
           borderWidth={0.25}
           positionBottom={-64}
-          borderColor={withOpacity(colors.input, resetOpacity)}
-          backgroundColor={withOpacity(colors.background, resetOpacity)}
-          hover={{
-            backgroundColor: colors.accent,
-            color: colors.accentForeground,
-          }}
+          opacity={resetOpacity}
           pointerEvents={resetPointerEvents}
           onClick={() => {
             if (resetPointerEvents.value === 'auto') {
@@ -396,6 +417,10 @@ function ChatInput(props: {
             md={{
               borderRadius: 40 * MD_FACTOR,
               minHeight: 52 * MD_FACTOR,
+            }}
+            lg={{
+              borderRadius: 40 * LG_FACTOR,
+              minHeight: 52 * LG_FACTOR,
             }}
           />
         ) : null}
@@ -424,28 +449,47 @@ function ChatInput(props: {
         flexDirection='row'
         alignItems='center'
         justifyContent='center'
-        paddingX={12}
+        paddingY={6}
+        paddingX={16}
         backgroundColor={colors.secondary}
         borderRadius={40}
         pointerEvents={inputPointerEvents}
         sm={{
           paddingX: 12 * SM_FACTOR,
+          paddingY: 6 * SM_FACTOR,
           borderRadius: 40 * SM_FACTOR,
         }}
         md={{
           paddingX: 12 * MD_FACTOR,
+          paddingY: 6 * MD_FACTOR,
           borderRadius: 40 * MD_FACTOR,
+        }}
+        lg={{
+          paddingX: 12 * LG_FACTOR,
+          paddingY: 6 * LG_FACTOR,
+          borderRadius: 40 * LG_FACTOR,
         }}
       >
         <Button
           size='icon'
-          variant={recButtonVariant}
-          width={36}
-          height={36}
+          variant='outline'
           flexShrink={0}
-          backgroundColor={colors.secondary}
+          backgroundColor={recBackgroundColor}
           borderColor={colors.secondaryForeground}
           borderRadius={99}
+          {...{
+            '*': {
+              flexShrink: 0,
+              color: recColor,
+              transformRotateZ: recRotationZ,
+            },
+          }}
+          hover={{
+            backgroundColor: recBackgroundColor,
+            '*': {
+              color: recColor,
+            },
+          }}
           sm={{
             width: 36 * SM_FACTOR,
             height: 36 * SM_FACTOR,
@@ -454,16 +498,25 @@ function ChatInput(props: {
             width: 36 * MD_FACTOR,
             height: 36 * MD_FACTOR,
           }}
-          onHoverChange={(isHover) => {
-            isRecHovered.value = isHover;
+          lg={{
+            width: 36 * LG_FACTOR,
+            height: 36 * LG_FACTOR,
           }}
           onPointerDown={() => {
-            recRotationZSpring.start(-180, {
+            recBackgroundColorSpring.start(
+              buttonVariants.default.backgroundColor?.value,
+            );
+            recColorSpring.start(buttonVariants.default.color?.value);
+
+            recRotationZSpring.start(-360, {
               loop: true,
-              config: { duration: 800 },
+              config: { duration: 1600 },
             });
           }}
           onPointerUp={() => {
+            recBackgroundColorSpring.start(colors.secondary.value);
+            recColorSpring.start(colors.secondaryForeground.value);
+
             recRotationZSpring.start(0, {
               loop: false,
               config: { duration: undefined },
@@ -471,10 +524,8 @@ function ChatInput(props: {
           }}
         >
           <Diamond
-            flexShrink={0}
             width={16}
             height={16}
-            color={recIconColor}
             sm={{
               width: 16 * SM_FACTOR,
               height: 16 * SM_FACTOR,
@@ -483,7 +534,10 @@ function ChatInput(props: {
               width: 16 * MD_FACTOR,
               height: 16 * MD_FACTOR,
             }}
-            transformRotateZ={recRotationZ}
+            lg={{
+              width: 16 * LG_FACTOR,
+              height: 16 * LG_FACTOR,
+            }}
           />
         </Button>
 
@@ -502,12 +556,15 @@ function ChatInput(props: {
           <Container
             width='100%'
             backgroundColor='transparent'
-            minHeight={56}
+            minHeight={40}
             sm={{
-              minHeight: 56 * SM_FACTOR,
+              minHeight: 40 * SM_FACTOR,
             }}
             md={{
-              minHeight: 56 * MD_FACTOR,
+              minHeight: 40 * MD_FACTOR,
+            }}
+            lg={{
+              minHeight: 40 * LG_FACTOR,
             }}
           >
             <Input
@@ -518,25 +575,32 @@ function ChatInput(props: {
               }}
               backgroundColor='transparent'
               borderWidth={0}
-              paddingX={8}
+              paddingX={6}
               fontSize={18}
               {...{
                 '*': {
                   sm: {
-                    paddingX: 8 * SM_FACTOR,
+                    paddingX: 6 * SM_FACTOR,
                     fontSize: 18 * SM_FACTOR,
                   },
                   md: {
-                    paddingX: 8 * MD_FACTOR,
+                    paddingX: 6 * MD_FACTOR,
                     fontSize: 18 * MD_FACTOR,
+                  },
+                  lg: {
+                    paddingX: 6 * LG_FACTOR,
+                    fontSize: 18 * LG_FACTOR,
                   },
                 },
               }}
               sm={{
-                paddingX: 8 * SM_FACTOR,
+                paddingX: 6 * SM_FACTOR,
               }}
               md={{
-                paddingX: 8 * MD_FACTOR,
+                paddingX: 6 * MD_FACTOR,
+              }}
+              lg={{
+                paddingX: 6 * LG_FACTOR,
               }}
             />
           </Container>
@@ -544,8 +608,6 @@ function ChatInput(props: {
 
         <Button
           size='icon'
-          width={36}
-          height={36}
           flexShrink={0}
           borderRadius={99}
           sm={{
@@ -556,7 +618,16 @@ function ChatInput(props: {
             width: 36 * MD_FACTOR,
             height: 36 * MD_FACTOR,
           }}
-          disabled={sendButtonDisabled || mutation.isPending}
+          lg={{
+            width: 36 * LG_FACTOR,
+            height: 36 * LG_FACTOR,
+          }}
+          {...{
+            '*': {
+              transformRotateZ: isRotating,
+            },
+          }}
+          disabled={isDisabled}
           onClick={() => {
             if (inputSignal.value.length > 0) {
               mutation.mutate(inputSignal.value);
@@ -567,7 +638,6 @@ function ChatInput(props: {
             <LoaderCircle
               width={16}
               height={16}
-              transformRotateZ={loaderRotationZ}
               sm={{
                 width: 16 * SM_FACTOR,
                 height: 16 * SM_FACTOR,
@@ -575,6 +645,10 @@ function ChatInput(props: {
               md={{
                 width: 16 * MD_FACTOR,
                 height: 16 * MD_FACTOR,
+              }}
+              lg={{
+                width: 16 * LG_FACTOR,
+                height: 16 * LG_FACTOR,
               }}
             />
           ) : (
@@ -588,6 +662,10 @@ function ChatInput(props: {
               md={{
                 width: 16 * MD_FACTOR,
                 height: 16 * MD_FACTOR,
+              }}
+              lg={{
+                width: 16 * LG_FACTOR,
+                height: 16 * LG_FACTOR,
               }}
             />
           )}
