@@ -15,6 +15,7 @@ import { Route as rootRouteImport } from './routes/__root'
 const IndexLazyRouteImport = createFileRoute('/')()
 const CardIndexLazyRouteImport = createFileRoute('/card/')()
 const InputIndexLazyRouteImport = createFileRoute('/input/')()
+const TunaIndexLazyRouteImport = createFileRoute('/tuna/')()
 
 const IndexLazyRoute = IndexLazyRouteImport.update({
   id: '/',
@@ -31,35 +32,44 @@ const InputIndexLazyRoute = InputIndexLazyRouteImport.update({
   path: '/input/',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/input/index.lazy').then((d) => d.Route))
+const TunaIndexLazyRoute = TunaIndexLazyRouteImport.update({
+  id: '/tuna/',
+  path: '/tuna/',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/tuna/index.lazy').then((d) => d.Route))
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
   '/card/': typeof CardIndexLazyRoute
   '/input/': typeof InputIndexLazyRoute
+  '/tuna/': typeof TunaIndexLazyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
   '/card': typeof CardIndexLazyRoute
   '/input': typeof InputIndexLazyRoute
+  '/tuna': typeof TunaIndexLazyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexLazyRoute
   '/card/': typeof CardIndexLazyRoute
   '/input/': typeof InputIndexLazyRoute
+  '/tuna/': typeof TunaIndexLazyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/card/' | '/input/'
+  fullPaths: '/' | '/card/' | '/input/' | '/tuna/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/card' | '/input'
-  id: '__root__' | '/' | '/card/' | '/input/'
+  to: '/' | '/card' | '/input' | '/tuna'
+  id: '__root__' | '/' | '/card/' | '/input/' | '/tuna/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute
   CardIndexLazyRoute: typeof CardIndexLazyRoute
   InputIndexLazyRoute: typeof InputIndexLazyRoute
+  TunaIndexLazyRoute: typeof TunaIndexLazyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -85,6 +95,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InputIndexLazyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tuna/': {
+      id: '/tuna/'
+      path: '/tuna'
+      fullPath: '/tuna/'
+      preLoaderRoute: typeof TunaIndexLazyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -92,6 +109,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexLazyRoute: IndexLazyRoute,
   CardIndexLazyRoute: CardIndexLazyRoute,
   InputIndexLazyRoute: InputIndexLazyRoute,
+  TunaIndexLazyRoute: TunaIndexLazyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

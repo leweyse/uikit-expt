@@ -26,6 +26,7 @@
     "@tanstack/react-router": "^1.170.32",
     "@zappar/msdf-generator": "1.2.4",
     "lucide-react": "^1.41.0",
+    "math": "1.0.0-canary-37519dcd-20260903",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "three": "^0.185.1",
