@@ -1,20 +1,20 @@
-import type {
-  InProperties,
-  RenderContext,
-  UnionizeVariants,
-} from '@pmndrs/uikit';
-import type {
-  BaseOutProperties,
-  ContainerProperties,
-} from '@react-three/uikit';
+import type { ComponentProps } from 'react';
+import type { UnionizeVariants } from '@pmndrs/uikit';
+import type { ContainerProperties } from '@react-three/uikit';
 
-import type { PropsWithChildren } from '@/types';
+import type { SchemaPropertyValue } from '@/types';
 
-import { Container, componentDefaults } from '@pmndrs/uikit';
-import { computed } from '@preact/signals-core';
-import { build, withOpacity } from '@react-three/uikit';
+import { useMemo } from 'react';
+import { computed, signal } from '@preact/signals-core';
+import { Container as ContainerUIKit, withOpacity } from '@react-three/uikit';
 
 import { borderRadius, colors } from '@/common/canvas/theme';
+import {
+  extractBooleanValue,
+  extractStringValue,
+  useComputedColorSpring,
+  useComputedSpring,
+} from '@/utils/use-spring-signal';
 
 type ButtonVariantProps = Pick<
   ContainerProperties,
@@ -28,14 +28,14 @@ type ButtonSizeProps = Pick<
 const _buttonVariants = {
   default: {
     hover: {
-      backgroundColor: withOpacity(colors.primary, 0.9),
+      backgroundColor: withOpacity(colors.primary, 0.8),
     },
     backgroundColor: colors.primary,
     color: colors.primaryForeground,
   },
   destructive: {
     hover: {
-      backgroundColor: withOpacity(colors.destructive, 0.9),
+      backgroundColor: withOpacity(colors.destructive, 0.8),
     },
     backgroundColor: colors.destructive,
     color: colors.destructiveForeground,
@@ -78,104 +78,141 @@ const _buttonSizes = {
 } satisfies Record<string, ButtonSizeProps>;
 const buttonSizes = _buttonSizes as UnionizeVariants<typeof _buttonSizes>;
 
-export type ButtonOutProperties = BaseOutProperties & {
-  variant?: keyof typeof buttonVariants;
-  size?: keyof typeof buttonSizes;
-  disabled?: boolean;
+export type ButtonProperties = {
+  variant?: SchemaPropertyValue<keyof typeof buttonVariants>;
+  size?: SchemaPropertyValue<keyof typeof buttonSizes>;
+  disabled?: SchemaPropertyValue<boolean>;
 };
 
-type VanillaButtonProperties = InProperties<ButtonOutProperties>;
+type Props = ComponentProps<typeof ContainerUIKit> & ButtonProperties;
 
-class ButtonClass extends Container<ButtonOutProperties> {
-  constructor(
-    inputProperties?: InProperties<ButtonOutProperties>,
-    initialClasses?: Array<InProperties<BaseOutProperties> | string>,
-    config?: {
-      renderContext?: RenderContext;
-      defaultOverrides?: InProperties<ButtonOutProperties>;
-    },
-  ) {
-    const borderW = computed(() => {
-      const variant = this.properties.value.variant ?? 'default';
-      return buttonVariants[variant]?.borderWidth;
+export const Button = (props: Props) => {
+  const isHovered = useMemo(() => signal(false), []);
+
+  const width = useMemo(() => {
+    return computed(() => {
+      const size = extractStringValue(props.size ?? 'default');
+      return buttonSizes[size]?.width;
     });
-    const sizeProps = computed(() => {
-      const size = this.properties.value.size ?? 'default';
+  }, []);
+
+  const height = useMemo(() => {
+    return computed(() => {
+      const size = extractStringValue(props.size ?? 'default');
+      return buttonSizes[size]?.height;
+    });
+  }, []);
+
+  const sizeProps = useMemo(() => {
+    return computed(() => {
+      const size = extractStringValue(props.size ?? 'default');
       return buttonSizes[size];
     });
-    const paddingX = computed(() => sizeProps.value?.paddingX);
-    const paddingY = computed(() => sizeProps.value?.paddingY);
-    super(inputProperties, initialClasses, {
-      defaults: componentDefaults,
-      ...config,
-      defaultOverrides: {
+  }, []);
+
+  const paddingX = useMemo(() => {
+    return computed(() => sizeProps.value?.paddingX);
+  }, []);
+
+  const paddingY = useMemo(() => {
+    return computed(() => sizeProps.value?.paddingY);
+  }, []);
+
+  const backgroundColor = useComputedColorSpring(() => {
+    const variant =
+      buttonVariants[extractStringValue(props.variant ?? 'default')];
+
+    if (isHovered.value) {
+      const variantColor =
+        variant?.hover?.backgroundColor ?? variant?.backgroundColor;
+      return variantColor?.value;
+    }
+
+    return variant?.backgroundColor?.value;
+  });
+
+  const color = useComputedColorSpring(() => {
+    const variant =
+      buttonVariants[extractStringValue(props.variant ?? 'default')];
+
+    if (isHovered.value) {
+      const variantColor = variant?.hover?.color ?? variant?.color;
+      return variantColor?.value;
+    }
+
+    return variant?.color?.value;
+  });
+
+  const borderW = useMemo(() => {
+    return computed(() => {
+      const variant = extractStringValue(props.variant ?? 'default');
+      return buttonVariants[variant]?.borderWidth;
+    });
+  }, []);
+
+  const borderColor = useMemo(() => {
+    return computed(() => {
+      const variant = extractStringValue(props.variant ?? 'default');
+      return buttonVariants[variant]?.borderColor?.value;
+    });
+  }, []);
+
+  const opacity = useComputedSpring(
+    () => {
+      const disabled = extractBooleanValue(props.disabled ?? false);
+      return disabled ? 0.5 : 1;
+    },
+    { deps: [typeof props.disabled] },
+  );
+
+  const cursor = useMemo(() => {
+    return computed(() => {
+      const disabled = extractBooleanValue(props.disabled ?? false);
+      return disabled ? 'default' : 'pointer';
+    });
+  }, [props.disabled]);
+
+  return (
+    <ContainerUIKit
+      flexDirection='row'
+      alignItems='center'
+      justifyContent='center'
+      width={width}
+      height={height}
+      paddingLeft={paddingX}
+      paddingRight={paddingX}
+      paddingTop={paddingY}
+      paddingBottom={paddingY}
+      backgroundColor={backgroundColor}
+      color={color}
+      fontSize={14}
+      lineHeight='20px'
+      fontWeight='medium'
+      wordBreak='keep-all'
+      borderTopWidth={borderW}
+      borderRightWidth={borderW}
+      borderBottomWidth={borderW}
+      borderLeftWidth={borderW}
+      borderColor={borderColor}
+      borderRadius={borderRadius.md}
+      opacity={opacity}
+      cursor={cursor}
+      {...props}
+      onHoverChange={(hovered) => {
+        isHovered.value = hovered;
+
+        if (typeof props.onHoverChange === 'function') {
+          props.onHoverChange(hovered);
+        }
+      }}
+      {...{
         '*': {
           borderColor: colors.border,
+          ...props['*'],
         },
-        borderRadius: borderRadius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'row',
-        fontSize: 14,
-        lineHeight: '20px',
-        fontWeight: 'medium',
-        wordBreak: 'keep-all',
-        hover: {
-          backgroundColor: computed(
-            () =>
-              buttonVariants[this.properties.value.variant ?? 'default'].hover
-                ?.backgroundColor?.value,
-          ),
-          color: computed(
-            () =>
-              buttonVariants[this.properties.value.variant ?? 'default'].hover
-                ?.color?.value,
-          ),
-        },
-        backgroundColor: computed(
-          () =>
-            buttonVariants[this.properties.value.variant ?? 'default']
-              .backgroundColor?.value,
-        ),
-        color: computed(
-          () =>
-            buttonVariants[this.properties.value.variant ?? 'default'].color
-              ?.value,
-        ),
-        borderTopWidth: borderW,
-        borderRightWidth: borderW,
-        borderBottomWidth: borderW,
-        borderLeftWidth: borderW,
-        borderColor: computed(
-          () =>
-            buttonVariants[this.properties.value.variant ?? 'default']
-              .borderColor?.value,
-        ),
-        // size-derived
-        height: computed(() => sizeProps.value?.height),
-        width: computed(() => sizeProps.value?.width),
-        paddingLeft: paddingX,
-        paddingRight: paddingX,
-        paddingTop: paddingY,
-        paddingBottom: paddingY,
-        // disabled-derived
-        opacity: computed(() =>
-          (this.properties.value.disabled ?? false) ? 0.5 : 1,
-        ),
-        cursor: computed(() =>
-          (this.properties.value.disabled ?? false) ? 'default' : 'pointer',
-        ),
-        ...config?.defaultOverrides,
-      },
-    });
-  }
-}
-
-export type ButtonProperties = VanillaButtonProperties & PropsWithChildren;
-
-export const Button = build<ButtonClass, ButtonProperties>(
-  ButtonClass,
-  'ButtonDefault',
-);
+      }}
+    />
+  );
+};
 
 export { buttonSizes, buttonVariants };
